@@ -4,53 +4,67 @@ Citations:
 */
 
 #include<iostream>
-#include<cstdlib>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/core.hpp>
+#include <netdb.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 
-void do_session(boost::asio::ip::tcp::socket& socket){
-  boost::beast::flat_buffer buff;
-  boost::beast::error_code error_code;
-
-  boost::beast::http::request<boost::beast::http::string_body> request;
-  
-  boost::beast::http::read(socket, buff, request, error_code);
-  //Checking for error 
-  if(error_code && error_code != boost::beast::http::error::end_of_stream){
-    std::cerr<<"Error "<<error_code.message()<<std::endl;
-  }
-
-  if(request.method() == boost::beast::http::verb::get){
-    std::cout<<"Received a GET method"<<std::endl;
-  }
-  else{
-    std::cout<<"Not a get method"<<std::endl;
-  }
-  
-  socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send, error_code);
+int exitWithErrorMessage(std::string msg){
+  std::cerr<<msg<<std::endl;
+  return EXIT_FAILURE;
 }
 
-
 int main(int argc, char **argv){
+  const char *hostname = NULL;
+  const char *port     = "12345";
+  struct addrinfo hints;
+  struct addrinfo *hosts;
+  
+  memset(&hints, 0, sizeof(hints));
 
-  boost::asio::ip::address addr = boost::asio::ip::make_address("127.0.0.1");
-  unsigned short port_num = 12345;
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags    = AI_PASSIVE;
 
-  boost::asio::io_context ioc{1};
+  int status = getaddrinfo(hostname, port, &hints, &hosts);
 
-  boost::asio::ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
+  if(status != 0) {
+    return exitWithErrorMessage("Error: was not able to get the address info for the host");
+  }
 
-  //Will Receive new connection
-  boost::asio::ip::tcp::socket socket{ioc};
+  int socket_fd = socket(hosts->ai_family, hosts->ai_socktype, hosts->ai_protocol);
 
-  std::cout<<"Waiting for connection at "<<std::endl;
-  //Wait for the connection
-  acceptor.accept(socket);
+  if(socket_fd == -1){
+    return exitWithErrorMessage("Error: Cannot open a socket");
+  }
 
-  do_session(socket);
+  int yes = 1;
+  status = setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
 
-  std::cout<<"Ending the server"<<std::endl;
+  status = bind(socket_fd, hosts->ai_addr, hosts->ai_addrlen);
+
+  if(status == -1){
+    return exitWithErrorMessage("Error while binding the socket");
+  }
+
+  status = listen(socket_fd, 100);
+
+  if(status == -1){
+    return exitWithErrorMessage("Error cannot listen to the socket");
+  }
+
+  std::cout<< "Waiting for connection"<<std::endl;
+  int client_connection_fd = accept(socket_fd, NULL, NULL);
+  
+  if(client_connection_fd == -1){
+    return exitWithErrorMessage("Error cannot accept the incoming request");
+  }
+
+  char buffer[512];
+  recv(client_connection_fd, buffer, 512, 0);
+  std::cout<<"Received "<<buffer<<std::endl;
+
+  freeaddrinfo(hosts);
+  close(socket_fd);
   return EXIT_SUCCESS;
 }

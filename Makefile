@@ -5,4 +5,4 @@ clean:
 	rm -f $(TARGETS)
 
 cache-server: cache-server.cpp
-	g++ -g -o $@ $<
+	g++ -std=c++11 -o $@ $<

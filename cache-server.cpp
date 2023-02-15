@@ -24,6 +24,7 @@ void do_session(boost::asio::ip::tcp::socket& socket){
 
   if(request.method() == boost::beast::http::verb::get){
     std::cout<<"Received a GET method"<<std::endl;
+    std::cout<<request<<std::endl;
   }
   else{
     std::cout<<"Not a get method"<<std::endl;

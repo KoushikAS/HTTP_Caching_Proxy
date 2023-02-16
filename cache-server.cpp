@@ -10,27 +10,42 @@ Citations:
 #include <boost/beast/core.hpp>
 
 
-void do_session(boost::asio::ip::tcp::socket& socket){
+boost::beast::http::response<boost::beast::http::dynamic_body> forwardRequest(boost::beast::http::request<boost::beast::http::string_body>& request,
+boost::asio::io_context& ioc){
+  std::string host = request.at("Host");
+  std::string port = "80";
+  boost::asio::ip::tcp::resolver resolver(ioc);
+  boost::beast::tcp_stream stream(ioc);
+
+  // Look up the domain name
+  auto const results = resolver.resolve(host, port);   
+
+  // Make the connection on the IP address we get from a lookup   
+  stream.connect(results);
+
+  boost::beast::http::write(stream, request);
+
+  boost::beast::http::response<boost::beast::http::dynamic_body> response;
   boost::beast::flat_buffer buff;
-  boost::beast::error_code error_code;
+
+  boost::beast::http::read(stream, buff, response);
+  return response;
+}
+
+
+void do_session(boost::asio::ip::tcp::socket& socket, boost::asio::io_context& ioc){
+  boost::beast::flat_buffer buff;
 
   boost::beast::http::request<boost::beast::http::string_body> request;
   
-  boost::beast::http::read(socket, buff, request, error_code);
-  //Checking for error 
-  if(error_code && error_code != boost::beast::http::error::end_of_stream){
-    std::cerr<<"Error "<<error_code.message()<<std::endl;
-  }
+  boost::beast::http::read(socket, buff, request);
 
-  if(request.method() == boost::beast::http::verb::get){
-    std::cout<<"Received a GET method"<<std::endl;
-    std::cout<<request<<std::endl;
-  }
-  else{
-    std::cout<<"Not a get method"<<std::endl;
-  }
+  std::cout<<request<<std::endl;
   
-  socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send, error_code);
+  boost::beast::http::response<boost::beast::http::dynamic_body> response = forwardRequest(request, ioc);
+  boost::beast::http::write(socket, response);
+
+  socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 }
 
 
@@ -50,7 +65,7 @@ int main(int argc, char **argv){
   //Wait for the connection
   acceptor.accept(socket);
 
-  do_session(socket);
+  do_session(socket, ioc);
 
   std::cout<<"Ending the server"<<std::endl;
   return EXIT_SUCCESS;

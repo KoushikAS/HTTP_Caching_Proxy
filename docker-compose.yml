@@ -4,6 +4,6 @@ services:
   app:
     build: .
     ports: 
-      - "12345:80"
+      - "12345:12345"
     volumes:
       - ./logs:/var/log/erss:rw

@@ -1,0 +1,9 @@
+version: '1.0'
+
+services:
+  app:
+    build: .
+    ports: 
+      - "12345:80"
+    volumes:
+      - ./logs:/var/log/erss:rw

@@ -10,7 +10,13 @@ Citations:
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <unordered_map>
+
 using namespace std;
+
+unordered_map<std::string,
+              boost::beast::http::response<boost::beast::http::dynamic_body> >
+    cache;
 
 boost::beast::http::response<boost::beast::http::dynamic_body> forwardRequest(
     boost::beast::http::request<boost::beast::http::string_body> & request,
@@ -32,6 +38,7 @@ boost::beast::http::response<boost::beast::http::dynamic_body> forwardRequest(
   boost::beast::flat_buffer buff;
 
   boost::beast::http::read(stream, buff, response);
+
   return response;
 }
 
@@ -44,10 +51,20 @@ void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context &
 
   cout << request << endl;
 
-  boost::beast::http::response<boost::beast::http::dynamic_body> response =
-      forwardRequest(request, ioc);
-  boost::beast::http::write(socket, response);
+  std::string host = request.at("Host");
 
+  boost::beast::http::response<boost::beast::http::dynamic_body> response;
+
+  if (cache.find(host) != cache.end()) {
+    std::cout << "Retriving from cache" << endl;
+    response = cache[host];
+  }
+  else {
+    response = forwardRequest(request, ioc);
+    cache[host] = response;
+  }
+
+  boost::beast::http::write(socket, response);
   socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 }
 
@@ -72,6 +89,14 @@ int main(int argc, char ** argv) {
   acceptor.accept(socket);
 
   do_session(socket, ioc);
+
+  //Will Receive new connection
+  boost::asio::ip::tcp::socket socket2{ioc};
+
+  //Wait for the connection
+  acceptor.accept(socket2);
+
+  do_session(socket2, ioc);
 
   cout << "Ending the server" << endl;
   logfile.close();

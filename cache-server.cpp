@@ -19,13 +19,19 @@ using namespace boost::asio;
 
 unordered_map<string, http::response<http::dynamic_body> > cache;
 
-http::response<http::dynamic_body> forwardRequest(
-    http::request<http::string_body> & request,
-    io_context & ioc) {
+void forwardRequest(http::request<http::string_body> & request,
+                    io_context & ioc,
+                    ip::tcp::socket & socket) {
   string host = string(request.at("Host"));
   string port = "80";
   ip::tcp::resolver resolver(ioc);
   tcp_stream stream(ioc);
+
+  string path = string(request.target());
+  path = path.erase(0, 7);              //Removing 'http://'
+  path = path.erase(0, host.length());  //Removing the host name from the url
+  cout << path << endl;
+  request.target(path);
 
   // Look up the domain name
   auto const results = resolver.resolve(host, port);
@@ -41,20 +47,40 @@ http::response<http::dynamic_body> forwardRequest(
 
   http::read(stream, buff, response);
 
-  return response;
+  //Wrting response back to the client
+  cout << response.base() << endl;
+  http::write(socket, response);
 }
 
-http::response<http::dynamic_body> forwardConnectRequest(
-    http::request<http::string_body> & request,
-    io_context & ioc,
-    ip::tcp::socket & client_socket) {
-  http::request<http::string_body> forwardRequest;
-
+void forwardConnectRequest(http::request<http::string_body> & request,
+                           io_context & ioc,
+                           ip::tcp::socket & client_socket) {
+  //Setting the host
   string host = string(request.at("Host"));
   int pos = host.find(":443");
   host = host.erase(pos, pos + 4);
-  forwardRequest.set(http::field::host, host);
+  string port = "443";
+  ip::tcp::resolver resolver(ioc);
+  tcp_stream server_socket(ioc);
 
+  // Look up the domain name
+  auto const results = resolver.resolve(host, port);
+  // Make the connection on the IP address we get from a lookup
+  server_socket.connect(results);
+
+  //Sending Request Ok back to client
+  http::response<http::string_body> response{http::status::ok, request.version()};
+  cout << response << endl;
+  http::write(client_socket, response);
+
+  flat_buffer buff;
+  http::request<http::string_body> forward_request;
+  http::read(client_socket, buff, forward_request);
+
+  cout << forward_request << endl;
+}
+
+/**
   string url = string(request.target());
   cout << url << endl;
 
@@ -84,11 +110,6 @@ http::response<http::dynamic_body> forwardConnectRequest(
   connect(ssocket.lowest_layer(), results);
   ssocket.handshake(ssl::stream_base::handshake_type::client);
 
-  //Sending Request Ok back to client
-  // boost::beast::http::response<boost::beast::http::string_body> response{
-  //   boost::beast::http::status::ok, request.version()};
-  //cout << response << endl;
-  //boost::beast::http::write(client_socket, response);
 
   const string path = "/";
 
@@ -101,6 +122,8 @@ http::response<http::dynamic_body> forwardConnectRequest(
 
   boost::beast::http::write(ssocket, req);
   **/
+
+/**
   cout << forwardRequest << endl;
   http::write(ssocket, forwardRequest);
 
@@ -111,26 +134,38 @@ http::response<http::dynamic_body> forwardConnectRequest(
 
   return response;
 }
-
+  **/
 void do_session(ip::tcp::socket & socket, io_context & ioc) {
   flat_buffer buff;
 
+  //Receving the request from client
   http::request<http::string_body> request;
-
   http::read(socket, buff, request);
 
   cout << request << endl;
 
-  http::response<http::dynamic_body> response;
+  //Checking if it is a connect request
+  if (request.method_string() == "CONNECT") {
+    cout << "Inside connect call" << endl;
+    forwardConnectRequest(request, ioc, socket);
+  }
+  else {
+    cout << "Inside Get Call" << endl;
+    forwardRequest(request, ioc, socket);
+  }
 
+  /**
   string host = string(request.at("Host"));
 
+  response = forwardRequest(request, ioc);
+
+
+  //Retirving from cache
   if (cache.find(host) != cache.end()) {
     cout << "Retriving from cache" << endl;
     response = cache[host];
   }
   else {
-    //const boost::string_view CONNECT("CONNECT");
     if (request.method_string() == "CONNECT") {
       response = forwardConnectRequest(request, ioc, socket);
     }
@@ -140,9 +175,8 @@ void do_session(ip::tcp::socket & socket, io_context & ioc) {
 
     cache[host] = response;
   }
+  **/
 
-  cout << response.base() << endl;
-  http::write(socket, response);
   socket.shutdown(ip::tcp::socket::shutdown_send);
 }
 
@@ -170,7 +204,8 @@ int main(int argc, char ** argv) {
 
   do_session(socket, ioc);
 
-  //Second call
+  /**
+
   //Will Receive new connection
   boost::asio::ip::tcp::socket socket2{ioc};
 
@@ -178,7 +213,7 @@ int main(int argc, char ** argv) {
   acceptor.accept(socket2);
 
   do_session(socket2, ioc);
-
+  **/
   cout << "Ending the server" << endl;
   logfile.close();
 

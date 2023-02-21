@@ -123,26 +123,23 @@ void do_session(ip::tcp::socket & socket, io_context & ioc) {
 
   http::response<http::dynamic_body> response;
 
-  /**
-  std::string host = request.at("Host");
+  string host = string(request.at("Host"));
 
   if (cache.find(host) != cache.end()) {
-    std::cout << "Retriving from cache" << endl;
+    cout << "Retriving from cache" << endl;
     response = cache[host];
   }
   else {
-  **/
-  //const boost::string_view CONNECT("CONNECT");
-  if (request.method_string() == "CONNECT") {
-    response = forwardConnectRequest(request, ioc, socket);
-  }
-  else {
-    response = forwardRequest(request, ioc);
-  }
-  /**
+    //const boost::string_view CONNECT("CONNECT");
+    if (request.method_string() == "CONNECT") {
+      response = forwardConnectRequest(request, ioc, socket);
+    }
+    else {
+      response = forwardRequest(request, ioc);
+    }
+
     cache[host] = response;
   }
-    **/
 
   cout << response.base() << endl;
   http::write(socket, response);
@@ -173,7 +170,7 @@ int main(int argc, char ** argv) {
 
   do_session(socket, ioc);
 
-  /** Second call
+  //Second call
   //Will Receive new connection
   boost::asio::ip::tcp::socket socket2{ioc};
 
@@ -181,7 +178,6 @@ int main(int argc, char ** argv) {
   acceptor.accept(socket2);
 
   do_session(socket2, ioc);
-  **/
 
   cout << "Ending the server" << endl;
   logfile.close();

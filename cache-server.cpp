@@ -46,10 +46,31 @@ boost::beast::http::response<boost::beast::http::dynamic_body> forwardRequest(
 
 boost::beast::http::response<boost::beast::http::dynamic_body> forwardConnectRequest(
     boost::beast::http::request<boost::beast::http::string_body> & request,
-    boost::asio::io_context & ioc) {
-  // std::string host = std::string(request.at("Host"));
-  std::string host = "www.google.com";
-  request.set(boost::beast::http::field::host, host);
+    boost::asio::io_context & ioc,
+    boost::asio::ip::tcp::socket & client_socket) {
+  boost::beast::http::request<boost::beast::http::string_body> forwardRequest;
+
+  std::string host = std::string(request.at("Host"));
+  int pos = host.find(":443");
+  host = host.erase(pos, pos + 4);
+  forwardRequest.set(boost::beast::http::field::host, host);
+
+  std::string url = std::string(request.target());
+  cout << url << endl;
+
+  pos = url.find(":443");
+  url = url.erase(pos, pos + 4);
+  url = url.append("/");
+  cout << url << endl;
+  forwardRequest.target("/");
+
+  forwardRequest.method(boost::beast::http::verb::get);
+
+  forwardRequest.version(request.version());
+
+  //std::string host = "www.google.com";
+  //request.set(boost::beast::http::field::host, host);
+
   std::string port = "443";
   boost::asio::ip::tcp::resolver resolver(ioc);
 
@@ -57,24 +78,31 @@ boost::beast::http::response<boost::beast::http::dynamic_body> forwardConnectReq
   //ssl_context.set_default_verify_paths();
 
   boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssocket = {ioc, ssl_context};
-  cout << "till here" << endl;
-  cout << host << endl;
-  cout << port << endl;
 
   auto results = resolver.resolve(host, port);
-  cout << "Really" << endl;
+
   connect(ssocket.lowest_layer(), results);
   ssocket.handshake(boost::asio::ssl::stream_base::handshake_type::client);
-  request.method(boost::beast::http::verb::get);
+
+  //Sending Request Ok back to client
+  // boost::beast::http::response<boost::beast::http::string_body> response{
+  //   boost::beast::http::status::ok, request.version()};
+  //cout << response << endl;
+  //boost::beast::http::write(client_socket, response);
+
+  const string path = "/";
 
   cout << request << endl;
-  const string path = "/";
+
+  /**
   boost::beast::http::request<boost::beast::http::string_body> req{
       boost::beast::http::verb::get, path, 11};
-
   req.set(boost::beast::http::field::host, host);
 
   boost::beast::http::write(ssocket, req);
+  **/
+  cout << forwardRequest << endl;
+  boost::beast::http::write(ssocket, forwardRequest);
 
   boost::beast::http::response<boost::beast::http::dynamic_body> response;
   boost::beast::flat_buffer buff;
@@ -88,7 +116,7 @@ void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context &
   boost::beast::flat_buffer buff;
 
   boost::beast::http::request<boost::beast::http::string_body> request;
-  cout << "here" << endl;
+
   boost::beast::http::read(socket, buff, request);
 
   cout << request << endl;
@@ -106,8 +134,7 @@ void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context &
   **/
   //const boost::string_view CONNECT("CONNECT");
   if (request.method_string() == "CONNECT") {
-    response = forwardConnectRequest(request, ioc);
-    cout << response.base() << endl;
+    response = forwardConnectRequest(request, ioc, socket);
   }
   else {
     response = forwardRequest(request, ioc);
@@ -116,6 +143,8 @@ void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context &
     cache[host] = response;
   }
     **/
+
+  cout << response.base() << endl;
   boost::beast::http::write(socket, response);
   socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 }

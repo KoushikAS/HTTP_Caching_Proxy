@@ -99,62 +99,6 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   cout << "Done" << endl;
 }
 
-/**
-  string url = string(request.target());
-  cout << url << endl;
-
-  pos = url.find(":443");
-  url = url.erase(pos, pos + 4);
-  url = url.append("/");
-  cout << url << endl;
-  forwardRequest.target("/");
-
-  forwardRequest.method(http::verb::get);
-
-  forwardRequest.version(request.version());
-
-  //std::string host = "www.google.com";
-  //request.set(boost::beast::http::field::host, host);
-
-  string port = "443";
-  ip::tcp::resolver resolver(ioc);
-
-  ssl::context ssl_context(ssl::context::sslv23_client);
-  //ssl_context.set_default_verify_paths();
-
-  ssl::stream<ip::tcp::socket> ssocket = {ioc, ssl_context};
-
-  auto results = resolver.resolve(host, port);
-
-  connect(ssocket.lowest_layer(), results);
-  ssocket.handshake(ssl::stream_base::handshake_type::client);
-
-
-  const string path = "/";
-
-  cout << request << endl;
-
-  /**
-  boost::beast::http::request<boost::beast::http::string_body> req{
-      boost::beast::http::verb::get, path, 11};
-  req.set(boost::beast::http::field::host, host);
-
-  boost::beast::http::write(ssocket, req);
-  **/
-
-/**
-  cout << forwardRequest << endl;
-  http::write(ssocket, forwardRequest);
-
-  http::response<http::dynamic_body> response;
-  flat_buffer buff;
-
-  http::read(ssocket, buff, response);
-
-  return response;
-}
-  **/
-
 void do_session(ip::tcp::socket & socket, io_context & ioc) {
   flat_buffer buff;
 
@@ -200,39 +144,71 @@ void do_session(ip::tcp::socket & socket, io_context & ioc) {
   socket.shutdown(ip::tcp::socket::shutdown_send);
 }
 
+int setUpSocketToListen(() {
+  struct addrinfo hints;
+  struct addrinfo * hosts;
+  const char * port = "12345";
+
+  memset(&hints, 0, sizeof(hints));
+
+  hints.ai_flags = AF_INET;         // To return address family from both IPV4 and IPV6.
+  hints.ai_socktype = SOCK_STREAM;  // Connection based protocol (i.e. TCP).
+  hints.ai_flags = AI_PASSIVE;      // Return Socket will be suitable for bind and accept.
+
+  int status = getaddrinfo(NULL, port, &hints, hosts);
+  if (status != 0) {
+    std::cerr << "Error cannot get the addresses" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  int socket_fd =
+      socket((*hosts)->ai_family, (*hosts)->ai_socktype, (*hosts)->ai_protocol);
+  if (socket_fd == -1) {
+    std::cerr << "Error cannot create socket" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  if (socket_fd == -1) {
+    std::cerr << "Error  cannot create socket" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  int yes = 1;
+  setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+  struct sockaddr_in my_addr;
+  memset(&my_addr, 0, sizeof(my_addr));
+  my_addr.sin_family = AF_INET;
+  my_addr.sin_port = 0;
+  socklen_t len = sizeof(my_addr);
+
+  int status = bind(socket_fd, (struct sockaddr *)&my_addr, len);
+  if (status == -1) {
+    std::cerr << "Error cannot bind socket" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  status = listen(socket_fd, 100);
+  if (status == -1) {
+    std::cerr << "Error cannot listen on socket" << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  return socket_fd;
+}
+
+
+
 int main(int argc, char ** argv) {
   // logging
   ofstream logfile;
   logfile.open("/var/log/erss/proxy.log");
   logfile << "Started the server" << endl;
 
-  // boost::asio::ip::address addr = boost::asio::ip::make_address("127.0.0.1");
-  ip::address addr = ip::make_address("0.0.0.0");
-  unsigned short port_num = 12345;
+  int socket = setUpSocketToListen();
 
-  io_context ioc{1};
-  //Listen to new connection
-  ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
+  do_session(socket);
 
-  //Socket creation
-  ip::tcp::socket socket{ioc};
-
-  cout << "Waiting for connection at " << endl;
-  //Wait for the connection
-  acceptor.accept(socket);
-
-  do_session(socket, ioc);
-
-  /**
-
-  //Will Receive new connection
-  boost::asio::ip::tcp::socket socket2{ioc};
-
-  //Wait for the connection
-  acceptor.accept(socket2);
-
-  do_session(socket2, ioc);
-  **/
   cout << "Ending the server" << endl;
   logfile.close();
 

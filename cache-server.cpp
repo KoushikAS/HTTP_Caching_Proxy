@@ -14,18 +14,18 @@ Citations:
 #include <unordered_map>
 
 using namespace std;
+using namespace boost::beast;
+using namespace boost::asio;
 
-unordered_map<std::string,
-              boost::beast::http::response<boost::beast::http::dynamic_body> >
-    cache;
+unordered_map<string, http::response<http::dynamic_body> > cache;
 
-boost::beast::http::response<boost::beast::http::dynamic_body> forwardRequest(
-    boost::beast::http::request<boost::beast::http::string_body> & request,
-    boost::asio::io_context & ioc) {
-  std::string host = std::string(request.at("Host"));
-  std::string port = "80";
-  boost::asio::ip::tcp::resolver resolver(ioc);
-  boost::beast::tcp_stream stream(ioc);
+http::response<http::dynamic_body> forwardRequest(
+    http::request<http::string_body> & request,
+    io_context & ioc) {
+  string host = string(request.at("Host"));
+  string port = "80";
+  ip::tcp::resolver resolver(ioc);
+  tcp_stream stream(ioc);
 
   // Look up the domain name
   auto const results = resolver.resolve(host, port);
@@ -34,28 +34,28 @@ boost::beast::http::response<boost::beast::http::dynamic_body> forwardRequest(
   // Make the connection on the IP address we get from a lookup
   stream.connect(results);
 
-  boost::beast::http::write(stream, request);
+  http::write(stream, request);
 
-  boost::beast::http::response<boost::beast::http::dynamic_body> response;
-  boost::beast::flat_buffer buff;
+  http::response<http::dynamic_body> response;
+  flat_buffer buff;
 
-  boost::beast::http::read(stream, buff, response);
+  http::read(stream, buff, response);
 
   return response;
 }
 
-boost::beast::http::response<boost::beast::http::dynamic_body> forwardConnectRequest(
-    boost::beast::http::request<boost::beast::http::string_body> & request,
-    boost::asio::io_context & ioc,
-    boost::asio::ip::tcp::socket & client_socket) {
-  boost::beast::http::request<boost::beast::http::string_body> forwardRequest;
+http::response<http::dynamic_body> forwardConnectRequest(
+    http::request<http::string_body> & request,
+    io_context & ioc,
+    ip::tcp::socket & client_socket) {
+  http::request<http::string_body> forwardRequest;
 
-  std::string host = std::string(request.at("Host"));
+  string host = string(request.at("Host"));
   int pos = host.find(":443");
   host = host.erase(pos, pos + 4);
-  forwardRequest.set(boost::beast::http::field::host, host);
+  forwardRequest.set(http::field::host, host);
 
-  std::string url = std::string(request.target());
+  string url = string(request.target());
   cout << url << endl;
 
   pos = url.find(":443");
@@ -64,25 +64,25 @@ boost::beast::http::response<boost::beast::http::dynamic_body> forwardConnectReq
   cout << url << endl;
   forwardRequest.target("/");
 
-  forwardRequest.method(boost::beast::http::verb::get);
+  forwardRequest.method(http::verb::get);
 
   forwardRequest.version(request.version());
 
   //std::string host = "www.google.com";
   //request.set(boost::beast::http::field::host, host);
 
-  std::string port = "443";
-  boost::asio::ip::tcp::resolver resolver(ioc);
+  string port = "443";
+  ip::tcp::resolver resolver(ioc);
 
-  boost::asio::ssl::context ssl_context(boost::asio::ssl::context::sslv23_client);
+  ssl::context ssl_context(ssl::context::sslv23_client);
   //ssl_context.set_default_verify_paths();
 
-  boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssocket = {ioc, ssl_context};
+  ssl::stream<ip::tcp::socket> ssocket = {ioc, ssl_context};
 
   auto results = resolver.resolve(host, port);
 
   connect(ssocket.lowest_layer(), results);
-  ssocket.handshake(boost::asio::ssl::stream_base::handshake_type::client);
+  ssocket.handshake(ssl::stream_base::handshake_type::client);
 
   //Sending Request Ok back to client
   // boost::beast::http::response<boost::beast::http::string_body> response{
@@ -102,26 +102,26 @@ boost::beast::http::response<boost::beast::http::dynamic_body> forwardConnectReq
   boost::beast::http::write(ssocket, req);
   **/
   cout << forwardRequest << endl;
-  boost::beast::http::write(ssocket, forwardRequest);
+  http::write(ssocket, forwardRequest);
 
-  boost::beast::http::response<boost::beast::http::dynamic_body> response;
-  boost::beast::flat_buffer buff;
+  http::response<http::dynamic_body> response;
+  flat_buffer buff;
 
-  boost::beast::http::read(ssocket, buff, response);
+  http::read(ssocket, buff, response);
 
   return response;
 }
 
-void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context & ioc) {
-  boost::beast::flat_buffer buff;
+void do_session(ip::tcp::socket & socket, io_context & ioc) {
+  flat_buffer buff;
 
-  boost::beast::http::request<boost::beast::http::string_body> request;
+  http::request<http::string_body> request;
 
-  boost::beast::http::read(socket, buff, request);
+  http::read(socket, buff, request);
 
   cout << request << endl;
 
-  boost::beast::http::response<boost::beast::http::dynamic_body> response;
+  http::response<http::dynamic_body> response;
 
   /**
   std::string host = request.at("Host");
@@ -145,8 +145,8 @@ void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context &
     **/
 
   cout << response.base() << endl;
-  boost::beast::http::write(socket, response);
-  socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+  http::write(socket, response);
+  socket.shutdown(ip::tcp::socket::shutdown_send);
 }
 
 int main(int argc, char ** argv) {
@@ -156,15 +156,15 @@ int main(int argc, char ** argv) {
   logfile << "Started the server" << endl;
 
   // boost::asio::ip::address addr = boost::asio::ip::make_address("127.0.0.1");
-  boost::asio::ip::address addr = boost::asio::ip::make_address("0.0.0.0");
+  ip::address addr = ip::make_address("0.0.0.0");
   unsigned short port_num = 12345;
 
-  boost::asio::io_context ioc{1};
+  io_context ioc{1};
 
-  boost::asio::ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
+  ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
 
   //Will Receive new connection
-  boost::asio::ip::tcp::socket socket{ioc};
+  ip::tcp::socket socket{ioc};
 
   cout << "Waiting for connection at " << endl;
   //Wait for the connection

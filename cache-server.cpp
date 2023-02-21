@@ -3,6 +3,7 @@ Citations:
 1) https://www.boost.org/doc/libs/1_80_0/libs/beast/example/http/server/sync/http_server_sync.cpp
 */
 
+#include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/core.hpp>
@@ -52,6 +53,11 @@ void forwardRequest(http::request<http::string_body> & request,
   http::write(socket, response);
 }
 
+std::string make_string(boost::asio::streambuf & streambuf) {
+  return {boost::asio::buffers_begin(streambuf.data()),
+          boost::asio::buffers_end(streambuf.data())};
+}
+
 void forwardConnectRequest(http::request<http::string_body> & request,
                            io_context & ioc,
                            ip::tcp::socket & client_socket) {
@@ -70,14 +76,27 @@ void forwardConnectRequest(http::request<http::string_body> & request,
 
   //Sending Request Ok back to client
   http::response<http::string_body> response{http::status::ok, request.version()};
-  cout << response << endl;
+  boost::system::error_code ec;
+  cout << response.base() << endl;
   http::write(client_socket, response);
+  cout << response << endl;
 
-  flat_buffer buff;
-  http::request<http::string_body> forward_request;
-  http::read(client_socket, buff, forward_request);
+  boost::asio::streambuf buffer;
 
-  cout << forward_request << endl;
+  read(client_socket, buffer, ec);
+  if (!ec || ec == boost::asio::error::eof) {
+    std::cout << "Writing: " << make_string(buffer) << std::endl;
+    write(server_socket, buffer);
+  }
+
+  boost::asio::streambuf buffer2;
+  read(server_socket, buffer2, ec);
+  if (!ec || ec == boost::asio::error::eof) {
+    std::cout << "Writing: " << make_string(buffer2) << std::endl;
+    write(client_socket, buffer2);
+  }
+
+  cout << "Done" << endl;
 }
 
 /**
@@ -135,6 +154,7 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   return response;
 }
   **/
+
 void do_session(ip::tcp::socket & socket, io_context & ioc) {
   flat_buffer buff;
 
@@ -191,16 +211,15 @@ int main(int argc, char ** argv) {
   unsigned short port_num = 12345;
 
   io_context ioc{1};
-
+  //Listen to new connection
   ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
 
-  //Will Receive new connection
+  //Socket creation
   ip::tcp::socket socket{ioc};
 
   cout << "Waiting for connection at " << endl;
   //Wait for the connection
   acceptor.accept(socket);
-  logfile << "got to here" << endl;
 
   do_session(socket, ioc);
 

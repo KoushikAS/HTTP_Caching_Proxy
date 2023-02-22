@@ -3,6 +3,7 @@ Citations:
 1) https://www.boost.org/doc/libs/1_80_0/libs/beast/example/http/server/sync/http_server_sync.cpp
 */
 
+#include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp>
@@ -59,6 +60,27 @@ std::string make_string(boost::asio::streambuf & streambuf) {
           boost::asio::buffers_end(streambuf.data())};
 }
 
+void recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
+  boost::array<char, 512> buf;
+
+  boost::system::error_code error;
+  size_t len = read_socket.read_some(boost::asio::buffer(buf), error);
+  std::cout << " read " << len << " bytes"
+            << std::endl;  // called multiple times for debugging!
+
+  if (error == boost::asio::error::eof)
+    return;
+  else if (error)
+    throw boost::system::system_error(error);  // Some other error.
+
+  write(write_socket, boost::asio::buffer(buf));
+  std::stringstream buf_ss;
+  buf_ss.write(buf.data(), len);
+  cout << buf_ss.str() << endl;
+
+  cout << "Outside" << endl;
+}
+
 void forwardConnectRequest(http::request<http::string_body> & request,
                            io_context & ioc,
                            ip::tcp::socket & client_socket) {
@@ -67,13 +89,14 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   int pos = host.find(":443");
   host = host.erase(pos, pos + 4);
   string port = "443";
+
   ip::tcp::resolver resolver(ioc);
-  tcp_stream server_socket(ioc);
+  ip::tcp::socket server_socket(ioc);
 
   // Look up the domain name
   auto const results = resolver.resolve(host, port);
   // Make the connection on the IP address we get from a lookup
-  server_socket.connect(results);
+  server_socket.connect(*results);
 
   //Sending Request Ok back to client
   http::response<http::string_body> response{http::status::ok, request.version()};
@@ -81,127 +104,27 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   cout << response.base() << endl;
   http::write(client_socket, response);
   cout << response << endl;
-  /**
 
-  // Mutliplexing both Client and Server port
-  //int maxFd = max(server_socket, client_socket) + 1;
-  fd_set rset;
-  struct timeval tv;
-  // Wait up to five seconds.
-  tv.tv_sec = 5;
-  tv.tv_usec = 0;
+  boost::array<char, 512> buf;
+  boost::system::error_code error;
 
   while (true) {
-    FD_SET(server_socket, &rset);
-    FD_SET(client_socket, &rset);
-
-    nready = select(1, &rset, NULL, NULL, &tv);
-    //Reading from server
-    if (FD_ISSET(server_socket, &rset)) {
-      boost::asio::streambuf receive_buffer;
-      boost::asio::read(server_socket, receive_buffer, boost::asio::transfer_all());
-      std::cout << "Writing: " << make_string(receive_buffer) << std::endl;
-      boost::write(client_socket, buffer);
-    }
-
-    //Reading from client
-    if (FD_ISSET(client_socket, &rset)) {
-      boost::asio::streambuf receive_buffer;
-      boost::asio::read(client_socket, receive_buffer, boost::asio::transfer_all());
-      std::cout << "Writing: " << make_string(receive_buffer) << std::endl;
-      boost::write(server_socket, buffer);
-    }
-
-    if (nready == 0) {
-      cout << "Timeout" << endl;
+    client_socket.read_some(boost::asio::buffer(buf), error);
+    if (error == boost::asio::error::eof)
       break;
-    }
+    write(server_socket, boost::asio::buffer(buf));
   }
-
-  cout << "Done" << endl;
-}
-
-  **/
-  int i = 0;
-  boost::system::error_code error;
-  while (i != 10) {
-    boost::asio::streambuf buffer;
-
-    boost::asio::read_until(client_socket, buffer, "\n");
-    if (error && error != boost::asio::error::eof) {
-      std::cout << "Writing: " << make_string(buffer) << std::endl;
-      write(server_socket, buffer);
-    }
-
-    boost::asio::streambuf buffer2;
-    boost::asio::read_until(server_socket, buffer2, "\n");
-
-    if (error && error != boost::asio::error::eof) {
-      std::cout << "Writing: " << make_string(buffer2) << std::endl;
-      write(client_socket, buffer2);
-    }
+  cout << "something" << endl;
+  while (true) {
+    server_socket.read_some(boost::asio::buffer(buf), error);
+    if (error == boost::asio::error::eof)
+      break;
+    write(client_socket, boost::asio::buffer(buf));
   }
-  server_socket.close();
-  client_socket.close();
-
-  cout << "Done" << endl;
+  cout << "About close" << endl;
+  server_socket.shutdown(ip::tcp::socket::shutdown_send);
+  //server_socket.close();
 }
-
-/**
-  string url = string(request.target());
-  cout << url << endl;
-
-  pos = url.find(":443");
-  url = url.erase(pos, pos + 4);
-  url = url.append("/");
-  cout << url << endl;
-  forwardRequest.target("/");
-
-  forwardRequest.method(http::verb::get);
-
-  forwardRequest.version(request.version());
-
-  //std::string host = "www.google.com";
-  //request.set(boost::beast::http::field::host, host);
-
-  string port = "443";
-  ip::tcp::resolver resolver(ioc);
-
-  ssl::context ssl_context(ssl::context::sslv23_client);
-  //ssl_context.set_default_verify_paths();
-
-  ssl::stream<ip::tcp::socket> ssocket = {ioc, ssl_context};
-
-  auto results = resolver.resolve(host, port);
-
-  connect(ssocket.lowest_layer(), results);
-  ssocket.handshake(ssl::stream_base::handshake_type::client);
-
-
-  const string path = "/";
-
-  cout << request << endl;
-
-  /**
-  boost::beast::http::request<boost::beast::http::string_body> req{
-      boost::beast::http::verb::get, path, 11};
-  req.set(boost::beast::http::field::host, host);
-
-  boost::beast::http::write(ssocket, req);
-  **/
-
-/**
-  cout << forwardRequest << endl;
-  http::write(ssocket, forwardRequest);
-
-  http::response<http::dynamic_body> response;
-  flat_buffer buff;
-
-  http::read(ssocket, buff, response);
-
-  return response;
-}
-  **/
 
 void do_session(ip::tcp::socket & socket, io_context & ioc) {
   flat_buffer buff;

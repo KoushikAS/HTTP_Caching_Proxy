@@ -1,6 +1,7 @@
 /**
 Citations:
 1) https://www.boost.org/doc/libs/1_80_0/libs/beast/example/http/server/sync/http_server_sync.cpp
+?????? https://www.boost.org/doc/libs/1_77_0/doc/html/boost_asio/example/cpp11/fork/daemon.cpp
 */
 
 #include <boost/asio/ip/tcp.hpp>
@@ -40,16 +41,13 @@ void do_session(boost::asio::ip::tcp::socket & socket, boost::asio::io_context &
   boost::beast::flat_buffer buff;
 
   boost::beast::http::request<boost::beast::http::string_body> request;
-  cout << "here" << endl;
   boost::beast::http::read(socket, buff, request);
 
   cout << request << endl;
-  // boost::beast::http::response<boost::beast::http::dynamic_body> response = NULL;
+
   boost::beast::http::response<boost::beast::http::dynamic_body> response =
       forwardRequest(request, ioc);
   boost::beast::http::write(socket, response);
-
-  socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
 }
 
 int main(int argc, char ** argv) {
@@ -58,23 +56,23 @@ int main(int argc, char ** argv) {
   logfile.open("/var/log/erss/proxy.log");
   logfile << "Started the server" << endl;
 
-  // boost::asio::ip::address addr = boost::asio::ip::make_address("127.0.0.1");
   boost::asio::ip::address addr = boost::asio::ip::make_address("0.0.0.0");
   unsigned short port_num = 12345;
 
   boost::asio::io_context ioc{1};
 
   boost::asio::ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
+  while(1) {
+    //Will Receive new connection
+    boost::asio::ip::tcp::socket socket{ioc};
+    
+    cout << "Waiting for connection at " << endl;
+    //Wait for the connection
+    acceptor.accept(socket);
 
-  //Will Receive new connection
-  boost::asio::ip::tcp::socket socket{ioc};
-  
-  cout << "Waiting for connection at " << endl;
-  //Wait for the connection
-  acceptor.accept(socket);
-  logfile << "got to here" << endl;
-  
-  do_session(socket, ioc);
+    do_session(socket, ioc);
+    socket.shutdown(boost::asio::ip::tcp::socket::shutdown_send);
+  }
   cout << "Ending the server" << endl;
   logfile.close();
 

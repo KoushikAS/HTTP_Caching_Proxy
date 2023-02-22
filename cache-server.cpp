@@ -25,6 +25,8 @@ using namespace boost::asio;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
 const string HTTP_PORT = "80";
+std::mutex mtx;
+ofstream logfile;
 
 unordered_map<string, http::response<http::dynamic_body> > cache;
 
@@ -49,6 +51,12 @@ ip::tcp::socket setUpSocketToConnect(string host, string port, io_context & ioc)
   socket.connect(*results);
 
   return socket;
+}
+
+void write_log(string str) {
+  mtx.lock();
+  logfile << str << endl;
+  mtx.unlock();
 }
 
 void forwardRequest(http::request<http::string_body> & client_request,
@@ -78,6 +86,7 @@ void forwardRequest(http::request<http::string_body> & client_request,
   http::write(client_socket, response);
 
   cout << response.base() << endl;
+  write_log(string(client_request.at("Host")));
 }
 
 int forwardBytes(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
@@ -218,11 +227,10 @@ void do_session(ip::tcp::socket & socket, io_context & ioc) {
   **/
 
   socket.shutdown(ip::tcp::socket::shutdown_send);
+  delete &socket;
 }
 
 int main(int argc, char ** argv) {
-  // logging
-  ofstream logfile;
   logfile.open("/var/log/erss/proxy.log");
   logfile << "Started the server" << endl;
 
@@ -235,14 +243,18 @@ int main(int argc, char ** argv) {
   ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
 
   while (true) {
-    ip::tcp::socket socket{ioc};
+    // make a new socket for the client
+    ip::tcp::socket* socketio = new ip::tcp::socket{ioc};
 
     cout << "Waiting for connection at " << endl;
     //Blocks while waiting for a connection
-    acceptor.accept(socket);
+    acceptor.accept(*socketio);
 
-    std::thread{do_session, std::ref(socket), std::ref(ioc)}.join();
+    std::thread t{do_session, std::ref(*socketio), std::ref(ioc)};
+
+    t.detach();
   }
+  //catch the sigabrt signal to do this when cleaning up the code (can't catch sigkill)
   cout << "Ending the server" << endl;
   logfile.close();
 

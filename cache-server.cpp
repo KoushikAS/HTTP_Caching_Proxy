@@ -60,7 +60,7 @@ std::string make_string(boost::asio::streambuf & streambuf) {
           boost::asio::buffers_end(streambuf.data())};
 }
 
-void recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
+int recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
   boost::array<char, 512> buf;
 
   boost::system::error_code error;
@@ -69,7 +69,7 @@ void recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
             << std::endl;  // called multiple times for debugging!
 
   if (error == boost::asio::error::eof)
-    return;
+    return -1;
   else if (error)
     throw boost::system::system_error(error);  // Some other error.
 
@@ -79,6 +79,7 @@ void recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
   cout << buf_ss.str() << endl;
 
   cout << "Outside" << endl;
+  return 1;
 }
 
 void forwardConnectRequest(http::request<http::string_body> & request,
@@ -108,6 +109,53 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   boost::array<char, 512> buf;
   boost::system::error_code error;
 
+  // Mutliplexing both Client and Server port
+  int maxFd = max(server_socket.native_handle(), client_socket.native_handle()) + 1;
+  fd_set rset;
+  struct timeval tv;
+  // Wait up to five seconds.
+  tv.tv_sec = 5;
+  tv.tv_usec = 0;
+
+  while (true) {
+    FD_SET(server_socket.native_handle(), &rset);
+    FD_SET(client_socket.native_handle(), &rset);
+
+    int nready = select(maxFd, &rset, NULL, NULL, &tv);
+    //Reading from server
+    if (FD_ISSET(server_socket.native_handle(), &rset)) {
+      if (recv(server_socket, client_socket) == -1) {
+        break;
+      }
+      cout << "Outside" << endl;
+    }
+
+    //Reading from client
+    if (FD_ISSET(client_socket.native_handle(), &rset)) {
+      if (recv(client_socket, server_socket) == -1) {
+        break;
+      }
+      cout << "Outside client" << endl;
+    }
+
+    if (nready == 0) {
+      cout << "no data from 5 sec" << endl;
+      break;
+    }
+  }
+
+  /**
+  while (true) {
+    if (recv(client_socket, server_socket) == -1) {
+      break;
+    }
+    cout << "Outside" << endl;
+    if (recv(server_socket, client_socket) == -1) {
+      break;
+    }
+    cout << "Yep" << endl;
+  }
+  /**
   while (true) {
     client_socket.read_some(boost::asio::buffer(buf), error);
     if (error == boost::asio::error::eof)
@@ -121,6 +169,7 @@ void forwardConnectRequest(http::request<http::string_body> & request,
       break;
     write(client_socket, boost::asio::buffer(buf));
   }
+  */
   cout << "About close" << endl;
   server_socket.shutdown(ip::tcp::socket::shutdown_send);
   //server_socket.close();

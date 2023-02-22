@@ -6,7 +6,6 @@ Citations:
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
 #include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ssl.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <sys/select.h>
@@ -22,45 +21,61 @@ using namespace boost::asio;
 
 unordered_map<string, http::response<http::dynamic_body> > cache;
 
-void forwardRequest(http::request<http::string_body> & request,
-                    io_context & ioc,
-                    ip::tcp::socket & socket) {
-  string host = string(request.at("Host"));
-  string port = "80";
-  ip::tcp::resolver resolver(ioc);
-  tcp_stream stream(ioc);
+const string HTTP_PORT = "80";
 
-  string path = string(request.target());
+string parsePath(string path, string host) {
   path = path.erase(0, 7);              //Removing 'http://'
   path = path.erase(0, host.length());  //Removing the host name from the url
-  cout << path << endl;
-  request.target(path);
+  return path;
+}
+
+ip::tcp::resolver::results_type findAddress(string host, string port, io_context & ioc) {
+  ip::tcp::resolver resolver(ioc);
+  return resolver.resolve(host, port);
+}
+
+ip::tcp::socket setUpSocketToConnect(string host, string port, io_context & ioc) {
+  ip::tcp::socket socket(ioc);
 
   // Look up the domain name
-  auto const results = resolver.resolve(host, port);
-  // boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(host), port);
+  auto const results = findAddress(host, port, ioc);
 
   // Make the connection on the IP address we get from a lookup
-  stream.connect(results);
+  socket.connect(*results);
 
-  http::write(stream, request);
+  return socket;
+}
+
+void forwardRequest(http::request<http::string_body> & client_request,
+                    io_context & ioc,
+                    ip::tcp::socket & client_socket) {
+  //Setting up Host and ports
+  string host = string(client_request.at("Host"));
+  string port = HTTP_PORT;
+  string path = parsePath(string(client_request.target()), host);
+
+  ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
+
+  //Setting up the request body to send to server
+  http::request<http::string_body> forward_request = client_request;
+  forward_request.target(path);
+
+  cout << forwardRequest << endl;
+
+  //Forward Request to Server
+  http::write(server_socket, forward_request);
 
   http::response<http::dynamic_body> response;
   flat_buffer buff;
 
-  http::read(stream, buff, response);
+  //Relay back the response from server to client
+  http::read(server_socket, buff, response);
+  http::write(client_socket, response);
 
-  //Wrting response back to the client
   cout << response.base() << endl;
-  http::write(socket, response);
 }
 
-std::string make_string(boost::asio::streambuf & streambuf) {
-  return {boost::asio::buffers_begin(streambuf.data()),
-          boost::asio::buffers_end(streambuf.data())};
-}
-
-int recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
+int forwardBytes(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
   boost::array<char, 1024> buf;
 
   boost::system::error_code error;
@@ -125,7 +140,7 @@ void forwardConnectRequest(http::request<http::string_body> & request,
     //Reading from client
     if (FD_ISSET(client_socket.native_handle(), &rset)) {
       cout << "Client sending" << endl;
-      if (recv(client_socket, server_socket) == -1) {
+      if (forwardBytes(client_socket, server_socket) == -1) {
         cout << "client Ended" << endl;
         FD_CLR(client_socket.native_handle(), &rset);
         break;
@@ -135,7 +150,7 @@ void forwardConnectRequest(http::request<http::string_body> & request,
     //Reading from server
     if (FD_ISSET(server_socket.native_handle(), &rset)) {
       cout << "Server sending" << endl;
-      if (recv(server_socket, client_socket) == -1) {
+      if (forwardBytes(server_socket, client_socket) == -1) {
         cout << "server ended" << endl;
         FD_CLR(server_socket.native_handle(), &rset);
         break;
@@ -148,35 +163,8 @@ void forwardConnectRequest(http::request<http::string_body> & request,
     }
   }
 
-  /**
-  while (true) {
-    if (recv(client_socket, server_socket) == -1) {
-      break;
-    }
-    cout << "Outside" << endl;
-    if (recv(server_socket, client_socket) == -1) {
-      break;
-    }
-    cout << "Yep" << endl;
-  }
-  /**
-  while (true) {
-    client_socket.read_some(boost::asio::buffer(buf), error);
-    if (error == boost::asio::error::eof)
-      break;
-    write(server_socket, boost::asio::buffer(buf));
-  }
-  cout << "something" << endl;
-  while (true) {
-    server_socket.read_some(boost::asio::buffer(buf), error);
-    if (error == boost::asio::error::eof)
-      break;
-    write(client_socket, boost::asio::buffer(buf));
-  }
-  */
   cout << "About close" << endl;
   server_socket.shutdown(ip::tcp::socket::shutdown_send);
-  //server_socket.close();
 }
 
 void do_session(ip::tcp::socket & socket, io_context & ioc) {
@@ -248,16 +236,6 @@ int main(int argc, char ** argv) {
 
     do_session(socket, ioc);
   }
-  /**
-
-  //Will Receive new connection
-  boost::asio::ip::tcp::socket socket2{ioc};
-
-  //Wait for the connection
-  acceptor.accept(socket2);
-
-  do_session(socket2, ioc);
-  **/
   cout << "Ending the server" << endl;
   logfile.close();
 

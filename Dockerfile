@@ -1,5 +1,5 @@
 FROM ubuntu
-RUN apt-get update && apt-get install -y cmake libboost-all-dev g++ libssl-dev
+RUN apt-get update && apt-get install -y cmake libboost-all-dev g++
 COPY . /server/
 WORKDIR /server/
 RUN make all

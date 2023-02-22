@@ -61,7 +61,7 @@ std::string make_string(boost::asio::streambuf & streambuf) {
 }
 
 int recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
-  boost::array<char, 512> buf;
+  boost::array<char, 1024> buf;
 
   boost::system::error_code error;
   size_t len = read_socket.read_some(boost::asio::buffer(buf), error);
@@ -74,9 +74,6 @@ int recv(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
     throw boost::system::system_error(error);  // Some other error.
 
   write(write_socket, boost::asio::buffer(buf));
-  std::stringstream buf_ss;
-  buf_ss.write(buf.data(), len);
-  cout << buf_ss.str() << endl;
 
   cout << "Outside" << endl;
   return 1;
@@ -91,6 +88,10 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   host = host.erase(pos, pos + 4);
   string port = "443";
 
+  cout << "host" << endl;
+  cout << host << endl;
+  cout << "port" << endl;
+  cout << port << endl;
   ip::tcp::resolver resolver(ioc);
   ip::tcp::socket server_socket(ioc);
 
@@ -106,9 +107,6 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   http::write(client_socket, response);
   cout << response << endl;
 
-  boost::array<char, 512> buf;
-  boost::system::error_code error;
-
   // Mutliplexing both Client and Server port
   int maxFd = max(server_socket.native_handle(), client_socket.native_handle()) + 1;
   fd_set rset;
@@ -122,23 +120,29 @@ void forwardConnectRequest(http::request<http::string_body> & request,
     FD_SET(client_socket.native_handle(), &rset);
 
     int nready = select(maxFd, &rset, NULL, NULL, &tv);
-    //Reading from server
-    if (FD_ISSET(server_socket.native_handle(), &rset)) {
-      if (recv(server_socket, client_socket) == -1) {
-        break;
-      }
-      cout << "Outside" << endl;
-    }
+    cout << nready << endl;
 
     //Reading from client
     if (FD_ISSET(client_socket.native_handle(), &rset)) {
+      cout << "Client sending" << endl;
       if (recv(client_socket, server_socket) == -1) {
+        cout << "client Ended" << endl;
+        FD_CLR(client_socket.native_handle(), &rset);
         break;
       }
-      cout << "Outside client" << endl;
     }
 
-    if (nready == 0) {
+    //Reading from server
+    if (FD_ISSET(server_socket.native_handle(), &rset)) {
+      cout << "Server sending" << endl;
+      if (recv(server_socket, client_socket) == -1) {
+        cout << "server ended" << endl;
+        FD_CLR(server_socket.native_handle(), &rset);
+        break;
+      }
+    }
+
+    if (nready <= 0) {
       cout << "no data from 5 sec" << endl;
       break;
     }
@@ -234,15 +238,16 @@ int main(int argc, char ** argv) {
   //Listen to new connection
   ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
 
-  //Socket creation
-  ip::tcp::socket socket{ioc};
+  while (true) {
+    //Socket creation
+    ip::tcp::socket socket{ioc};
 
-  cout << "Waiting for connection at " << endl;
-  //Wait for the connection
-  acceptor.accept(socket);
+    cout << "Waiting for connection at " << endl;
+    //Wait for the connection
+    acceptor.accept(socket);
 
-  do_session(socket, ioc);
-
+    do_session(socket, ioc);
+  }
   /**
 
   //Will Receive new connection

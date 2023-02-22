@@ -8,6 +8,7 @@ Citations:
 #include <boost/asio/ssl.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
+#include <sys/select.h>
 
 #include <cstdlib>
 #include <fstream>
@@ -80,21 +81,68 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   cout << response.base() << endl;
   http::write(client_socket, response);
   cout << response << endl;
+  /**
 
-  boost::asio::streambuf buffer;
+  // Mutliplexing both Client and Server port
+  //int maxFd = max(server_socket, client_socket) + 1;
+  fd_set rset;
+  struct timeval tv;
+  // Wait up to five seconds.
+  tv.tv_sec = 5;
+  tv.tv_usec = 0;
 
-  read(client_socket, buffer, ec);
-  if (!ec || ec == boost::asio::error::eof) {
-    std::cout << "Writing: " << make_string(buffer) << std::endl;
-    write(server_socket, buffer);
+  while (true) {
+    FD_SET(server_socket, &rset);
+    FD_SET(client_socket, &rset);
+
+    nready = select(1, &rset, NULL, NULL, &tv);
+    //Reading from server
+    if (FD_ISSET(server_socket, &rset)) {
+      boost::asio::streambuf receive_buffer;
+      boost::asio::read(server_socket, receive_buffer, boost::asio::transfer_all());
+      std::cout << "Writing: " << make_string(receive_buffer) << std::endl;
+      boost::write(client_socket, buffer);
+    }
+
+    //Reading from client
+    if (FD_ISSET(client_socket, &rset)) {
+      boost::asio::streambuf receive_buffer;
+      boost::asio::read(client_socket, receive_buffer, boost::asio::transfer_all());
+      std::cout << "Writing: " << make_string(receive_buffer) << std::endl;
+      boost::write(server_socket, buffer);
+    }
+
+    if (nready == 0) {
+      cout << "Timeout" << endl;
+      break;
+    }
   }
 
-  boost::asio::streambuf buffer2;
-  read(server_socket, buffer2, ec);
-  if (!ec || ec == boost::asio::error::eof) {
-    std::cout << "Writing: " << make_string(buffer2) << std::endl;
-    write(client_socket, buffer2);
+  cout << "Done" << endl;
+}
+
+  **/
+  int i = 0;
+  boost::system::error_code error;
+  while (i != 10) {
+    boost::asio::streambuf buffer;
+
+    boost::asio::read_until(client_socket, buffer, "\n");
+    if (error && error != boost::asio::error::eof) {
+      std::cout << "Writing: " << make_string(buffer) << std::endl;
+      write(server_socket, buffer);
+    }
+
+    boost::asio::streambuf buffer2;
+    boost::asio::read_until(server_socket, buffer2, "\n");
+
+    if (error && error != boost::asio::error::eof) {
+      std::cout << "Writing: " << make_string(buffer2) << std::endl;
+      write(client_socket, buffer2);
+    }
   }
+  server_socket.close();
+  client_socket.close();
 
   cout << "Done" << endl;
 }

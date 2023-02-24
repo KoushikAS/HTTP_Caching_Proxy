@@ -91,19 +91,20 @@ void forwardRequest(http::request<http::string_body> & client_request,
 
 // returns no bytes read or -1 incase of EOF was reached
 int forwardBytes(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
-  boost::array<char, 1024> buf;
+  //boost::array<char, 65536> buf;
+  std::vector<char> buf(65536);
   boost::system::error_code error;
 
   //Reading bytes from read socket
   size_t noBytesRead = read_socket.read_some(boost::asio::buffer(buf), error);
   std::cout << " read " << noBytesRead << " bytes" << std::endl;
 
-  if (error == boost::asio::error::eof)
+  if (error == boost::asio::error::eof) {
     return EOF_ERROR;
-  else
+  }
 
-    //Writing bytes to write socket
-    write(write_socket, boost::asio::buffer(buf));
+  //Writing bytes to write socket
+  write(write_socket, boost::asio::buffer(buf, noBytesRead));
 
   return noBytesRead;
 }
@@ -118,11 +119,12 @@ void multiplexingClientServer(ip::tcp::socket & client_socket,
 
   // Mutliplexing both Client and Server port
   int maxFd = max(server_socket.native_handle(), client_socket.native_handle()) + 1;
+
   while (true) {
     //Setting client socket and server socket to Read File Descriptors
+    FD_ZERO(&read_FDs);
     FD_SET(server_socket.native_handle(), &read_FDs);
     FD_SET(client_socket.native_handle(), &read_FDs);
-
     //Listening to file Read File Descriptors
     int nready = select(maxFd, &read_FDs, NULL, NULL, &tv);
 
@@ -160,6 +162,7 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   host = host.erase(pos, pos + 4);
   string port = "443";
 
+  std::cout << host << std::endl;
   //Setup Server Socket
   ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
 
@@ -197,6 +200,7 @@ void do_session(ip::tcp::socket & socket, io_context & ioc) {
   }
   else if (request.method_string() == "POST") {
     cout << "Inside a POST Call" << endl;
+    forwardRequest(request, ioc, socket);
   }
   else {
     cout << "Unknown HTTP request made" << endl;

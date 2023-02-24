@@ -11,7 +11,6 @@ Citations:
 #include <boost/beast/http.hpp>
 #include <boost/bind/bind.hpp>
 #include <boost/thread.hpp>
-#include <boost/asio.hpp>
 #include <sys/select.h>
 
 #include <cstdlib>
@@ -25,6 +24,7 @@ using namespace boost::asio;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
 const string HTTP_PORT = "80";
+const int EOF_ERROR = -1;
 std::mutex mtx;
 ofstream logfile;
 
@@ -89,23 +89,68 @@ void forwardRequest(http::request<http::string_body> & client_request,
   write_log(string(client_request.at("Host")));
 }
 
+// returns no bytes read or -1 incase of EOF was reached
 int forwardBytes(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) {
-  boost::array<char, 1024> buf;
-
+  //boost::array<char, 65536> buf;
+  std::vector<char> buf(65536);
   boost::system::error_code error;
-  size_t len = read_socket.read_some(boost::asio::buffer(buf), error);
-  std::cout << " read " << len << " bytes"
-            << std::endl;  // called multiple times for debugging!
 
-  if (error == boost::asio::error::eof)
-    return -1;
-  else if (error)
-    throw boost::system::system_error(error);  // Some other error.
+  //Reading bytes from read socket
+  size_t noBytesRead = read_socket.read_some(boost::asio::buffer(buf), error);
+  std::cout << " read " << noBytesRead << " bytes" << std::endl;
 
-  write(write_socket, boost::asio::buffer(buf));
+  if (error == boost::asio::error::eof) {
+    return EOF_ERROR;
+  }
 
-  cout << "Outside" << endl;
-  return 1;
+  //Writing bytes to write socket
+  write(write_socket, boost::asio::buffer(buf, noBytesRead));
+
+  return noBytesRead;
+}
+
+void multiplexingClientServer(ip::tcp::socket & client_socket,
+                              ip::tcp::socket & server_socket) {
+  fd_set read_FDs;
+  struct timeval tv;
+  // Wait up to five seconds.
+  tv.tv_sec = 5;
+  tv.tv_usec = 0;
+
+  // Mutliplexing both Client and Server port
+  int maxFd = max(server_socket.native_handle(), client_socket.native_handle()) + 1;
+
+  while (true) {
+    //Setting client socket and server socket to Read File Descriptors
+    FD_ZERO(&read_FDs);
+    FD_SET(server_socket.native_handle(), &read_FDs);
+    FD_SET(client_socket.native_handle(), &read_FDs);
+    //Listening to file Read File Descriptors
+    int nready = select(maxFd, &read_FDs, NULL, NULL, &tv);
+
+    //Reading from client socket
+    if (FD_ISSET(client_socket.native_handle(), &read_FDs)) {
+      cout << "Client sending" << endl;
+      if (forwardBytes(client_socket, server_socket) == EOF_ERROR) {
+        cout << "client Ended connection" << endl;
+        break;
+      }
+    }
+
+    //Reading from server socket
+    if (FD_ISSET(server_socket.native_handle(), &read_FDs)) {
+      cout << "Server sending" << endl;
+      if (forwardBytes(server_socket, client_socket) == EOF_ERROR) {
+        cout << "server ended connection" << endl;
+        break;
+      }
+    }
+
+    if (nready <= 0) {
+      cout << "no data from 5 sec" << endl;
+      break;
+    }
+  }
 }
 
 void forwardConnectRequest(http::request<http::string_body> & request,
@@ -117,67 +162,21 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   host = host.erase(pos, pos + 4);
   string port = "443";
 
-  cout << "host" << endl;
-  cout << host << endl;
-  cout << "port" << endl;
-  cout << port << endl;
-  ip::tcp::resolver resolver(ioc);
-  ip::tcp::socket server_socket(ioc);
+  std::cout << host << std::endl;
+  //Setup Server Socket
+  ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
 
-  // Look up the domain name
-  auto const results = resolver.resolve(host, port);
-  // Make the connection on the IP address we get from a lookup
-  server_socket.connect(*results);
-
-  //Sending Request Ok back to client
+  //Send a Response 200 OK back to client
   http::response<http::string_body> response{http::status::ok, request.version()};
-  boost::system::error_code ec;
-  cout << response.base() << endl;
   http::write(client_socket, response);
+
   cout << response << endl;
 
-  // Mutliplexing both Client and Server port
-  int maxFd = max(server_socket.native_handle(), client_socket.native_handle()) + 1;
-  fd_set rset;
-  struct timeval tv;
-  // Wait up to five seconds.
-  tv.tv_sec = 5;
-  tv.tv_usec = 0;
-
-  while (true) {
-    FD_SET(server_socket.native_handle(), &rset);
-    FD_SET(client_socket.native_handle(), &rset);
-
-    int nready = select(maxFd, &rset, NULL, NULL, &tv);
-    cout << nready << endl;
-
-    //Reading from client
-    if (FD_ISSET(client_socket.native_handle(), &rset)) {
-      cout << "Client sending" << endl;
-      if (forwardBytes(client_socket, server_socket) == -1) {
-        cout << "client Ended" << endl;
-        FD_CLR(client_socket.native_handle(), &rset);
-        break;
-      }
-    }
-
-    //Reading from server
-    if (FD_ISSET(server_socket.native_handle(), &rset)) {
-      cout << "Server sending" << endl;
-      if (forwardBytes(server_socket, client_socket) == -1) {
-        cout << "server ended" << endl;
-        FD_CLR(server_socket.native_handle(), &rset);
-        break;
-      }
-    }
-
-    if (nready <= 0) {
-      cout << "no data from 5 sec" << endl;
-      break;
-    }
-  }
+  //Multiplexing client and server
+  multiplexingClientServer(client_socket, server_socket);
 
   cout << "About close" << endl;
+
   server_socket.shutdown(ip::tcp::socket::shutdown_send);
 }
 
@@ -194,12 +193,16 @@ void do_session(ip::tcp::socket & socket, io_context & ioc) {
   if (request.method_string() == "CONNECT") {
     cout << "Inside a connect call" << endl;
     forwardConnectRequest(request, ioc, socket);
-  } else if (request.method_string() == "GET") {
+  }
+  else if (request.method_string() == "GET") {
     cout << "Inside a GET Call" << endl;
     forwardRequest(request, ioc, socket);
-  } else if (request.method_string() == "POST") {
+  }
+  else if (request.method_string() == "POST") {
     cout << "Inside a POST Call" << endl;
-  } else {
+    forwardRequest(request, ioc, socket);
+  }
+  else {
     cout << "Unknown HTTP request made" << endl;
   }
 
@@ -244,7 +247,7 @@ int main(int argc, char ** argv) {
 
   while (true) {
     // make a new socket for the client
-    ip::tcp::socket* socketio = new ip::tcp::socket{ioc};
+    ip::tcp::socket * socketio = new ip::tcp::socket{ioc};
 
     cout << "Waiting for connection at " << endl;
     //Blocks while waiting for a connection

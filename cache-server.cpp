@@ -25,7 +25,8 @@ using namespace boost::asio;
 
 #define BOOST_BIND_GLOBAL_PLACEHOLDERS
 const string HTTP_PORT = "80";
-std::mutex mtx;
+std::mutex log_mtx;
+std::mutex cache_mtx;
 ofstream logfile;
 
 unordered_map<string, http::response<http::dynamic_body> > cache;
@@ -54,9 +55,16 @@ ip::tcp::socket setUpSocketToConnect(string host, string port, io_context & ioc)
 }
 
 void write_log(string str) {
-  mtx.lock();
+  log_mtx.lock();
   logfile << str << endl;
-  mtx.unlock();
+  log_mtx.unlock();
+}
+
+void print_cache() {
+  cout << "Printing the cache!" << endl;
+  for(const auto& elem : cache) {
+    cout << elem.first << ":\n" << elem.second << "\n";
+  }
 }
 
 void forwardRequest(http::request<http::string_body> & client_request,
@@ -84,6 +92,11 @@ void forwardRequest(http::request<http::string_body> & client_request,
   //Relay back the response from server to client
   http::read(server_socket, buff, response);
   http::write(client_socket, response);
+
+  cache_mtx.lock();
+  cache.insert({string(client_request.at("Host")), response});
+  print_cache();
+  cache_mtx.unlock();
 
   cout << response.base() << endl;
   write_log(string(client_request.at("Host")));

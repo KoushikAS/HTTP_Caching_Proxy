@@ -1,30 +1,8 @@
-Started the server
-1: "GET http://info.cern.ch/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:19 2023
-1: Received "HTTP/1.1 304 Not Modified" from info.cern.ch
-1: Responding "HTTP/1.1 304 Not Modified"
-2: "CONNECT www.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:20 2023
-3: "CONNECT www.youtube.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:21 2023
-7: "CONNECT csp.withgoogle.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:22 2023
-8: "CONNECT adservice.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:23 2023
-9: "CONNECT play.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:23 2023
-10: "CONNECT googleads.g.doubleclick.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:23 2023
-11: "CONNECT fonts.gstatic.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:24 2023
-12: "CONNECT fonts.gstatic.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:24 2023
-12: Tunnel closed
-11: Tunnel closed
-13: "CONNECT static.doubleclick.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:25 2023
-14: "POST http://ocsp.pki.goog/gts1c3 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:25 2023
-14: Received "HTTP/1.1 200 OK" from ocsp.pki.goog
-14: Responding "HTTP/1.1 200 OK"
-14: Tunnel closed
-2: Tunnel closed
-15: "CONNECT redirector.googlevideo.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:26 2023
-16: "CONNECT jnn-pa.googleapis.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:26 2023
-17: "POST http://ocsp.pki.goog/gts1c3 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:26 2023
-17: Received "HTTP/1.1 200 OK" from ocsp.pki.goog
-17: Responding "HTTP/1.1 200 OK"
-17: Tunnel closed
-3: Tunnel closed
-18: "CONNECT www.youtube.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:27 2023
-7: Tunnel closed
-8: Tunnel closed
+101: "CONNECT www.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:54 2023
+104: "CONNECT adservice.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
+105: "CONNECT safebrowsing.googleapis.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
+106: "CONNECT play.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
+107: "CONNECT googleads.g.doubleclick.net:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
+105: Tunnel closed
+101: Tunnel closed
+108: "CONNECT www.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:30:00 2023

@@ -9,18 +9,18 @@ Citations:
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/bind/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 #include <sys/select.h>
-
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <chrono>
-#include <iomanip>
-#include <ctime>
 #include <time.h>
+
+#include <chrono>
+#include <cstdlib>
+#include <ctime>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
 #include <unordered_map>
 
 using namespace std;
@@ -62,6 +62,7 @@ ip::tcp::socket setUpSocketToConnect(string host, string port, io_context & ioc)
 void write_log(string str) {
   const std::lock_guard<std::mutex> lock(log_mtx);
   logfile << str << endl;
+  cout << str << endl;
   // look into finally call to release thread
 }
 
@@ -69,7 +70,7 @@ void print_cache() {
   cout << "-------------------------------" << endl;
   cout << "Printing the cache!" << endl;
   int i = 1;
-  for(const auto& elem : cache) {
+  for (const auto & elem : cache) {
     cout << i << ": " << elem.first << ":\n" << elem.second << "\n";
     i++;
   }
@@ -78,7 +79,8 @@ void print_cache() {
 
 void forwardRequest(http::request<http::string_body> & client_request,
                     io_context & ioc,
-                    ip::tcp::socket & client_socket, int ID) {
+                    ip::tcp::socket & client_socket,
+                    int ID) {
   //Setting up Host and ports
   string host = string(client_request.at("Host"));
   string port = HTTP_PORT;
@@ -122,9 +124,12 @@ void forwardRequest(http::request<http::string_body> & client_request,
   //Relay back the response from server to client
   http::read(server_socket, buff, response);
   std::string const response_headers = boost::lexical_cast<std::string>(response.base());
-  write_log(to_string(ID) + ": Received \"" + response_headers.substr(0, response_headers.find("\n")-1) + "\" from " + host);
+  write_log(to_string(ID) + ": Received \"" +
+            response_headers.substr(0, response_headers.find("\n") - 1) + "\" from " +
+            host);
   http::write(client_socket, response);
-  write_log(to_string(ID) + ": Responding \"" + response_headers.substr(0, response_headers.find("\n")-1) + "\"");
+  write_log(to_string(ID) + ": Responding \"" +
+            response_headers.substr(0, response_headers.find("\n") - 1) + "\"");
 
   // if (cacheable) {
   //   if (expires) {
@@ -138,13 +143,13 @@ void forwardRequest(http::request<http::string_body> & client_request,
   //   write_log(to_string(ID) + ": cached, but requires re-validation ");
   // }
   if (response_headers.find("200 OK") != std::string::npos) {
-    write_log(to_string(ID) + ": Tunnel closed"); 
+    write_log(to_string(ID) + ": Tunnel closed");
   }
 
   cache_mtx.lock();
   // cout << "PATH: " << path << endl;
   cache.insert({host, response});
-  print_cache();
+  //print_cache();
   cache_mtx.unlock();
 
   // cout << response.base() << endl;
@@ -191,24 +196,19 @@ void multiplexingClientServer(ip::tcp::socket & client_socket,
 
     //Reading from client socket
     if (FD_ISSET(client_socket.native_handle(), &read_FDs)) {
-      cout << "Client sending" << endl;
       if (forwardBytes(client_socket, server_socket) == EOF_ERROR) {
-        cout << "client Ended connection" << endl;
         break;
       }
     }
 
     //Reading from server socket
     if (FD_ISSET(server_socket.native_handle(), &read_FDs)) {
-      cout << "Server sending" << endl;
       if (forwardBytes(server_socket, client_socket) == EOF_ERROR) {
-        cout << "server ended connection" << endl;
         break;
       }
     }
 
     if (nready <= 0) {
-      cout << "no data from 5 sec" << endl;
       break;
     }
   }
@@ -216,7 +216,8 @@ void multiplexingClientServer(ip::tcp::socket & client_socket,
 
 void forwardConnectRequest(http::request<http::string_body> & request,
                            io_context & ioc,
-                           ip::tcp::socket & client_socket, int ID) {
+                           ip::tcp::socket & client_socket,
+                           int ID) {
   //Setting the host
   string host = string(request.at("Host"));
   int pos = host.find(":443");
@@ -245,21 +246,21 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
   http::request<http::string_body> request;
   http::read(socket, buff, request);
   auto t = time(nullptr);
-  tm* tim = localtime(&t);
+  tm * tim = localtime(&t);
   strncpy(date_time_string, asctime(tim), strlen(asctime(tim)) - 1);
   std::string const strHeaders = boost::lexical_cast<std::string>(request.base());
-  write_log(to_string(ID) + ": \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + socket.remote_endpoint().address().to_string() + " @ " + date_time_string);
+  write_log(to_string(ID) + ": \"" + strHeaders.substr(0, strHeaders.find("\n") - 1) +
+            "\" from " + socket.remote_endpoint().address().to_string() + " @ " +
+            date_time_string);
 
   //Checking if it is a connect request
   if (request.method_string() == "CONNECT") {
     forwardConnectRequest(request, ioc, socket, ID);
   }
   else if (request.method_string() == "GET") {
-    cout << "Inside a GET Call" << endl;
     forwardRequest(request, ioc, socket, ID);
   }
   else if (request.method_string() == "POST") {
-    cout << "Inside a POST Call" << endl;
     forwardRequest(request, ioc, socket, ID);
   }
   else {
@@ -308,7 +309,6 @@ int main(int argc, char ** argv) {
     // make a new socket for the client
     ip::tcp::socket * socketio = new ip::tcp::socket{ioc};
 
-    cout << "Waiting for connection at " << endl;
     //Blocks while waiting for a connection
     acceptor.accept(*socketio);
     ID++;

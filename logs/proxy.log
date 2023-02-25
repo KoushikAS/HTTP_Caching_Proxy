@@ -1,2 +1,40 @@
 Started the server
-info.cern.ch
+1: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-14
+2: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-14
+3: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-14
+3: Tunnel closed
+4: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-15
+4: Tunnel closed
+5: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-15
+5: Tunnel closed
+6: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-15
+9: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-16
+10: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-16
+11: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-16
+12: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-16
+15: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-16
+14: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-16
+16: POST from 172.18.0.1 @ 25-02-2023 04-22-17
+18: POST from 172.18.0.1 @ 25-02-2023 04-22-17
+16: Received HTTP/1.1 200 OK from ocsp.pki.goog
+16: Responding HTTP/1.1 200 OK
+16: Tunnel closed
+18: Received HTTP/1.1 200 OK from ocsp.pki.goog
+18: Responding HTTP/1.1 200 OK
+18: Tunnel closed
+14: Tunnel closed
+19: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-17
+22: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-18
+8: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-18
+23: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-19
+1: Tunnel closed
+2: Tunnel closed
+24: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-19
+6: Tunnel closed
+25: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-20
+26: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-20
+27: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-20
+28: CONNECT from 172.18.0.1 @ 25-02-2023 04-22-21
+29: POST from 172.18.0.1 @ 25-02-2023 04-22-21
+30: POST from 172.18.0.1 @ 25-02-2023 04-22-21
+29: Received HTTP/1.1 200 OK from ocsp.pki.goog

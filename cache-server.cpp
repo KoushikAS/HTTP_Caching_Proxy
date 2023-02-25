@@ -59,10 +59,9 @@ ip::tcp::socket setUpSocketToConnect(string host, string port, io_context & ioc)
 }
 
 void write_log(string str) {
-  log_mtx.lock();
+  const std::lock_guard<std::mutex> lock(log_mtx);
   logfile << str << endl;
   // look into finally call to release thread
-  log_mtx.unlock();
 }
 
 void print_cache() {

@@ -26,6 +26,8 @@ https://www.boost.org/doc/libs/1_61_0/doc/html/boost_asio/reference/basic_io_obj
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <ctime>
+#include <regex>
 #include <unordered_map>
 
 using namespace std;
@@ -91,6 +93,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
   string port = HTTP_PORT;
   string path = parsePath(string(client_request.target()), host);
   http::request<http::string_body> forward_request = client_request;
+  std::regex re(".*\b(Cache)\b(.*)");
+  std::smatch m;
   // cout << forward_request.base() << endl;
   // if (client_request.method_string() == "GET") {
   //   if (value in cache) {
@@ -135,8 +139,13 @@ void forwardRequest(http::request<http::string_body> & client_request,
   http::write(client_socket, response);
   write_log(to_string(ID) + ": Responding \"" +
             response_headers.substr(0, response_headers.find("\n") - 1) + "\"");
+  cout << regex_match(response_headers, re) << " : " << response_headers << endl;
+  if (regex_match(response_headers, re)) {
+    regex_search(response_headers, m, re);
+    write_log(to_string(ID) + m.suffix().str());
+  }
 
-  // if (cacheable) {
+  // if (response.find("Cache-Control: ") != std::string::npos || response.find("Expires: ") != std::string::npos) {
   //   if (expires) {
   //     write_log(to_string(ID) + ": not cacheable because " + "(REASON)");
   //   }
@@ -147,15 +156,15 @@ void forwardRequest(http::request<http::string_body> & client_request,
   // else {
   //   write_log(to_string(ID) + ": cached, but requires re-validation ");
   // }
-  if (response_headers.find("200 OK") != std::string::npos) {
-    write_log(to_string(ID) + ": Tunnel closed");
-  }
 
-  cache_mtx.lock();
-  // cout << "PATH: " << path << endl;
-  cache.insert({host, response});
-  //print_cache();
-  cache_mtx.unlock();
+  // if (response_headers.find("200 OK") != std::string::npos) {
+  //   write_log(to_string(ID) + ": Tunnel closed"); 
+  // }
+
+  const std::lock_guard<std::mutex> lock(cache_mtx);
+  cache.insert({string(client_request.target()), response});
+  // print_cache();
+  // cout << response.base() << endl;
 }
 
 // returns no bytes read or -1 incase of EOF was reached

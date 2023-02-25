@@ -1,8 +1,0 @@
-101: "CONNECT www.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:54 2023
-104: "CONNECT adservice.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
-105: "CONNECT safebrowsing.googleapis.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
-106: "CONNECT play.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
-107: "CONNECT googleads.g.doubleclick.net:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:29:58 2023
-105: Tunnel closed
-101: Tunnel closed
-108: "CONNECT www.google.com:443 HTTP/1.1" from 172.19.0.1 @ Sat Feb 25 15:30:00 2023

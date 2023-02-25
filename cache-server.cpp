@@ -20,6 +20,7 @@ Citations:
 #include <chrono>
 #include <iomanip>
 #include <ctime>
+#include <time.h>
 #include <unordered_map>
 
 using namespace std;
@@ -99,7 +100,7 @@ void forwardRequest(http::request<http::string_body> & client_request,
   //   else {
   //     write_log(to_string(ID) + ": not in cache");
   //     std::string const strHeaders = boost::lexical_cast<std::string>(forward_request.base());
-  //     write_log(to_string(ID) + ": Requesting " + strHeaders.substr(0, strHeaders.find("\n")-1) + " from " + host);
+  //     write_log(to_string(ID) + ": Requesting \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + host);
   //   }
   //   logfile << "GET request at" << host << endl;
   //   write_log("GET request at " + host);
@@ -121,9 +122,9 @@ void forwardRequest(http::request<http::string_body> & client_request,
   //Relay back the response from server to client
   http::read(server_socket, buff, response);
   std::string const response_headers = boost::lexical_cast<std::string>(response.base());
-  write_log(to_string(ID) + ": Received " + response_headers.substr(0, response_headers.find("\n")-1) + " from " + host);
+  write_log(to_string(ID) + ": Received \"" + response_headers.substr(0, response_headers.find("\n")-1) + "\" from " + host);
   http::write(client_socket, response);
-  write_log(to_string(ID) + ": Responding " + response_headers.substr(0, response_headers.find("\n")-1));
+  write_log(to_string(ID) + ": Responding \"" + response_headers.substr(0, response_headers.find("\n")-1) + "\"");
 
   // if (cacheable) {
   //   if (expires) {
@@ -141,7 +142,7 @@ void forwardRequest(http::request<http::string_body> & client_request,
   }
 
   cache_mtx.lock();
-  cout << "PATH: " << path << endl;
+  // cout << "PATH: " << path << endl;
   cache.insert({host, response});
   print_cache();
   cache_mtx.unlock();
@@ -157,7 +158,7 @@ int forwardBytes(ip::tcp::socket & read_socket, ip::tcp::socket & write_socket) 
 
   //Reading bytes from read socket
   size_t noBytesRead = read_socket.read_some(boost::asio::buffer(buf), error);
-  std::cout << " read " << noBytesRead << " bytes" << std::endl;
+  // std::cout << " read " << noBytesRead << " bytes" << std::endl;
 
   if (error == boost::asio::error::eof) {
     return EOF_ERROR;
@@ -222,7 +223,7 @@ void forwardConnectRequest(http::request<http::string_body> & request,
   host = host.erase(pos, pos + 4);
   string port = "443";
 
-  std::cout << host << std::endl;
+  // std::cout << host << std::endl;
   //Setup Server Socket
   ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
 
@@ -245,11 +246,9 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
   http::read(socket, buff, request);
   auto t = time(nullptr);
   tm* tim = localtime(&t);
-  strftime(date_time_string, 100, "%d-%m-%Y %H-%M-%S", tim);
-  // std::cout << std::put_time(&tm, "%d-%m-%Y %H-%M-%S") << std::endl;
-
-  // cout << request << endl;
-  write_log(to_string(ID) + ": " + string(request.method_string()) + " from " + socket.remote_endpoint().address().to_string() + " @ " + date_time_string);
+  strncpy(date_time_string, asctime(tim), strlen(asctime(tim)) - 1);
+  std::string const strHeaders = boost::lexical_cast<std::string>(request.base());
+  write_log(to_string(ID) + ": \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + socket.remote_endpoint().address().to_string() + " @ " + date_time_string);
 
   //Checking if it is a connect request
   if (request.method_string() == "CONNECT") {
@@ -291,12 +290,10 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
   **/
   socket.shutdown(ip::tcp::socket::shutdown_send);
   delete &socket;
-  cout << "here" << endl;
 }
 
 int main(int argc, char ** argv) {
   logfile.open("/var/log/erss/proxy.log");
-  logfile << "Started the server" << endl;
 
   // boost::asio::ip::address addr = boost::asio::ip::make_address("127.0.0.1");
   ip::address addr = ip::make_address("0.0.0.0");
@@ -305,7 +302,7 @@ int main(int argc, char ** argv) {
   io_context ioc{1};
   //Listen to new connection
   ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
-  int ID = 0;
+  int ID = 100;
 
   while (true) {
     // make a new socket for the client

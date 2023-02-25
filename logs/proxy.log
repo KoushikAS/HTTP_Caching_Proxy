@@ -1,30 +1,70 @@
-Started the server
-1: "GET http://info.cern.ch/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:19 2023
-1: Received "HTTP/1.1 304 Not Modified" from info.cern.ch
-1: Responding "HTTP/1.1 304 Not Modified"
-2: "CONNECT www.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:20 2023
-3: "CONNECT www.youtube.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:21 2023
-7: "CONNECT csp.withgoogle.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:22 2023
-8: "CONNECT adservice.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:23 2023
-9: "CONNECT play.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:23 2023
-10: "CONNECT googleads.g.doubleclick.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:23 2023
-11: "CONNECT fonts.gstatic.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:24 2023
-12: "CONNECT fonts.gstatic.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:24 2023
-12: Tunnel closed
-11: Tunnel closed
-13: "CONNECT static.doubleclick.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:25 2023
-14: "POST http://ocsp.pki.goog/gts1c3 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:25 2023
-14: Received "HTTP/1.1 200 OK" from ocsp.pki.goog
-14: Responding "HTTP/1.1 200 OK"
-14: Tunnel closed
-2: Tunnel closed
-15: "CONNECT redirector.googlevideo.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:26 2023
-16: "CONNECT jnn-pa.googleapis.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:26 2023
-17: "POST http://ocsp.pki.goog/gts1c3 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:26 2023
-17: Received "HTTP/1.1 200 OK" from ocsp.pki.goog
-17: Responding "HTTP/1.1 200 OK"
-17: Tunnel closed
-3: Tunnel closed
-18: "CONNECT www.youtube.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 05:20:27 2023
-7: Tunnel closed
-8: Tunnel closed
+101: "CONNECT spocs.getpocket.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:01 2023
+103: "CONNECT img-getpocket.cdn.mozilla.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:01 2023
+104: "CONNECT www.google-analytics.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:02 2023
+105: "CONNECT api.assertcom.de:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:02 2023
+106: "CONNECT play.pokemonshowdown.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:02 2023
+107: "CONNECT api.permutive.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:03 2023
+108: "CONNECT api.enthusiastgaming.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:03 2023
+108: Tunnel closed
+111: "CONNECT pghub.io:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+112: "CONNECT sim3.psim.us:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+115: "CONNECT cdn.pbxai.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+116: "CONNECT btloader.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+117: "POST http://r3.o.lencr.org/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+113: "CONNECT mwemwt5wijryoelis.ay.delivery:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+117: Received "HTTP/1.1 200 OK" from r3.o.lencr.org
+117: Responding "HTTP/1.1 200 OK"
+118: "POST http://ocsp.digicert.com/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+119: "CONNECT ad-delivery.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+120: "CONNECT floor.pbxai.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+121: "CONNECT sim3.psim.us:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+118: Received "HTTP/1.1 200 OK" from ocsp.digicert.com
+118: Responding "HTTP/1.1 200 OK"
+122: "POST http://ocsp.r2m02.amazontrust.com/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:04 2023
+123: "CONNECT api.btloader.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+122: Received "HTTP/1.1 200 OK" from ocsp.r2m02.amazontrust.com
+122: Responding "HTTP/1.1 200 OK"
+130: "CONNECT securepubads.g.doubleclick.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+131: "CONNECT c.amazon-adsystem.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+128: "CONNECT c.amazon-adsystem.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+125: "CONNECT sb.scorecardresearch.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+132: "CONNECT apis.cmp.quantcast.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+134: "CONNECT pandg.tapad.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+130: Tunnel closed
+128: Tunnel closed
+131: Tunnel closed
+135: "POST http://ocsp.digicert.com/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+135: Received "HTTP/1.1 200 OK" from ocsp.digicert.com
+135: Responding "HTTP/1.1 200 OK"
+136: "CONNECT webadvisorc.rest.gti.mcafee.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+137: "CONNECT match.adsrvr.org:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+138: "CONNECT sync.mathtag.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+139: "CONNECT aax-dtb-cf.amazon-adsystem.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+140: "CONNECT tlx.3lift.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+141: "CONNECT g2.gumgum.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+142: "CONNECT htlb.casalemedia.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+143: "CONNECT prebid.media.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+144: "CONNECT onetag-sys.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+145: "POST http://ocsp.globalsign.com/gsgccr3dvtlsca2020 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+146: "CONNECT ssc.33across.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+147: "CONNECT hbopenbid.pubmatic.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+148: "CONNECT enthusiast-gaming-d.openx.net:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+149: "CONNECT ib.adnxs.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+150: "CONNECT ap.lijit.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+152: "CONNECT btlr.sharethrough.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+151: "CONNECT fastlane.rubiconproject.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+154: "CONNECT btlr.sharethrough.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+153: "CONNECT c2shb.ssp.yahoo.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+155: "POST http://ocsp.digicert.com/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:05 2023
+145: Received "HTTP/1.1 200 OK" from ocsp.globalsign.com
+145: Responding "HTTP/1.1 200 OK"
+155: Received "HTTP/1.1 200 OK" from ocsp.digicert.com
+155: Responding "HTTP/1.1 200 OK"
+156: "CONNECT pixel.tapad.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:06 2023
+157: "POST http://ocsp.digicert.com/ HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:06 2023
+158: "CONNECT s.amazon-adsystem.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:06 2023
+157: Received "HTTP/1.1 200 OK" from ocsp.digicert.com
+157: Responding "HTTP/1.1 200 OK"
+159: "CONNECT pixel.quantserve.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:06 2023
+101: Tunnel closed
+160: "CONNECT adservice.google.com:443 HTTP/1.1" from 172.18.0.1 @ Sat Feb 25 17:43:06 2023

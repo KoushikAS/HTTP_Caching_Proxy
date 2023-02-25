@@ -21,6 +21,7 @@ Citations:
 #include <iomanip>
 #include <ctime>
 #include <time.h>
+#include <regex>
 #include <unordered_map>
 
 using namespace std;
@@ -84,6 +85,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
   string port = HTTP_PORT;
   string path = parsePath(string(client_request.target()), host);
   http::request<http::string_body> forward_request = client_request;
+  std::regex re(".*\b(Cache)\b(.*)");
+  std::smatch m;
   // cout << forward_request.base() << endl;
   // if (client_request.method_string() == "GET") {
   //   if (value in cache) {
@@ -125,8 +128,13 @@ void forwardRequest(http::request<http::string_body> & client_request,
   write_log(to_string(ID) + ": Received \"" + response_headers.substr(0, response_headers.find("\n")-1) + "\" from " + host);
   http::write(client_socket, response);
   write_log(to_string(ID) + ": Responding \"" + response_headers.substr(0, response_headers.find("\n")-1) + "\"");
+  cout << regex_match(response_headers, re) << " : " << response_headers << endl;
+  if (regex_match(response_headers, re)) {
+    regex_search(response_headers, m, re);
+    write_log(to_string(ID) + m.suffix().str());
+  }
 
-  // if (cacheable) {
+  // if (response.find("Cache-Control: ") != std::string::npos || response.find("Expires: ") != std::string::npos) {
   //   if (expires) {
   //     write_log(to_string(ID) + ": not cacheable because " + "(REASON)");
   //   }
@@ -137,16 +145,14 @@ void forwardRequest(http::request<http::string_body> & client_request,
   // else {
   //   write_log(to_string(ID) + ": cached, but requires re-validation ");
   // }
-  if (response_headers.find("200 OK") != std::string::npos) {
-    write_log(to_string(ID) + ": Tunnel closed"); 
-  }
 
-  cache_mtx.lock();
-  // cout << "PATH: " << path << endl;
-  cache.insert({host, response});
-  print_cache();
-  cache_mtx.unlock();
+  // if (response_headers.find("200 OK") != std::string::npos) {
+  //   write_log(to_string(ID) + ": Tunnel closed"); 
+  // }
 
+  const std::lock_guard<std::mutex> lock(cache_mtx);
+  cache.insert({string(client_request.target()), response});
+  // print_cache();
   // cout << response.base() << endl;
 }
 
@@ -191,7 +197,7 @@ void multiplexingClientServer(ip::tcp::socket & client_socket,
 
     //Reading from client socket
     if (FD_ISSET(client_socket.native_handle(), &read_FDs)) {
-      cout << "Client sending" << endl;
+      // cout << "Client sending" << endl;
       if (forwardBytes(client_socket, server_socket) == EOF_ERROR) {
         cout << "client Ended connection" << endl;
         break;
@@ -200,7 +206,7 @@ void multiplexingClientServer(ip::tcp::socket & client_socket,
 
     //Reading from server socket
     if (FD_ISSET(server_socket.native_handle(), &read_FDs)) {
-      cout << "Server sending" << endl;
+      // cout << "Server sending" << endl;
       if (forwardBytes(server_socket, client_socket) == EOF_ERROR) {
         cout << "server ended connection" << endl;
         break;
@@ -308,7 +314,6 @@ int main(int argc, char ** argv) {
     // make a new socket for the client
     ip::tcp::socket * socketio = new ip::tcp::socket{ioc};
 
-    cout << "Waiting for connection at " << endl;
     //Blocks while waiting for a connection
     acceptor.accept(*socketio);
     ID++;

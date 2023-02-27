@@ -76,7 +76,6 @@ ip::tcp::socket setUpSocketToConnect(string host, string port, io_context & ioc)
 void write_log(string str) {
   const std::lock_guard<std::mutex> lock(log_mtx);
   logfile << str << endl;
-  // cout << str << endl;
 }
 
 void print_cache() {
@@ -91,29 +90,42 @@ void print_cache() {
 }
 
 bool check_cache(int ID, string req, string host) {
-  const std::lock_guard<std::mutex> lock(cache_mtx);
+  const std::lock_guard<std::mutex> lock(cache_mtx); // might need to change this to not lock for entire scope
   if (cache.find(req) != cache.end()) {
+    cache_entry cache_hit = cache.find(req)->second;
+    std::string const response_header = boost::lexical_cast<std::string>(cache_hit.res_body.base());
     regex rg_cache("(Cache\\-Control\\: (.*))");
-    smatch match, ex_match;
-  //   if (regex_search(req, match, rg_cache)) {
-  //     if (value in cache but expired) {
-  //       write_log(to_string(ID) + ": in cache, but expired at (EXPIREDTIME)");
-  //     }
-  //     else if (match[2].str().find("no-cache") != string::npos) { // or if the max age has been reached and must-validate is there
-  //       write_log(to_string(ID) + ": in cache, requires validation");
-  //     }
-  //     else if (in cache, valid) {
-  //       write_log(to_string(ID) + ": in cache, valid");
-  //     }
-  //     }
-  //     else {
-  //       write_log(to_string(ID) + ": not in cache");
-  //       string const strHeaders = boost::lexical_cast<string>(forward_request.base());
-  //       write_log(to_string(ID) + ": Requesting \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + host);
-  //     }
-  // }
-  // else {
-  //   write_log(to_string(ID) + "not in cache");
+    smatch match;
+    if (regex_search(response_header, match, rg_cache)) {
+      if (match[2].str().find("no-cache") != string::npos) {
+        write_log(to_string(ID) + ": in cache, requires validation");
+      }
+      else if (match[2].str().find("max-age") != string::npos) {
+        regex rgx_exp("(max\\-age\\=([0-9]+))");
+        smatch exp_match;
+        string const temp = match[2].str();
+        regex_search(temp, exp_match, rgx_exp);
+        int max_age = stoi(exp_match[2].str());
+        if (max_age == 0) {
+          write_log(to_string(ID) + ": in cache, requires validation");
+        } else {
+          time_t now = time(NULL);
+          time_t t2 = mktime(&cache_hit.exp_time);
+          if (difftime(now, t2) > 0) {
+            write_log(to_string(ID) + ": in cache, but expired at " + asctime(&cache_hit.exp_time));
+          } else {
+            write_log(to_string(ID) + ": in cache, valid");
+            return true;
+          }
+        }
+      }
+    }
+    else { // should never trigger, error checking
+      write_log(to_string(ID) + ": not in cache");
+    }
+  }
+  else {
+    write_log(to_string(ID) + ": not in cache");
   }
   return false;
 }
@@ -128,8 +140,8 @@ struct tm store_cache_information(int ID, string resp) {
 
   if (regex_search(resp, match, rg_cache)) {
     // contains a Cache-Control tag
-    if (match[2].str().find("no-store") != string::npos) {
-      write_log(to_string(ID) + ": not cacheable because " + "no-store");
+    if (match[2].str().find("no-store") != string::npos || match[2].str().find("private") != string::npos) {
+      write_log(to_string(ID) + ": not cacheable because " + "no-store/private flag");
       return zero_time;
     }
     else if (match[2].str().find("no-cache") != string::npos) {
@@ -149,16 +161,15 @@ struct tm store_cache_information(int ID, string resp) {
         now_time.tm_sec += max_age;
         mktime(&now_time);
         write_log(to_string(ID) + ": cached, but expires at " + asctime(&now_time));
-        
       }
       return now_time;
     }
-    else if (match[2].str().find("must-revalidate") != string::npos) {
+    else if (match[2].str().find("must-revalidate") != string::npos) { // should never need but is just an error catching case?
       write_log(to_string(ID) + ": cached, but expires at " + "No Expire Time Given");
       return now_time;
     }
     else {
-      write_log(to_string(ID) + ": not cacheable because " + "Cache-Control flag there, but had no information");
+      write_log(to_string(ID) + ": not cacheable because " + "Cache-Control flag there, but had no cache information");
       return zero_time;
     }
   }
@@ -182,16 +193,28 @@ void forwardRequest(http::request<http::string_body> & client_request,
   bool in_cache = false;
 
   if (client_request.method_string() == "GET") {
-    check_cache(ID, string(client_request.target()), host);
-    // write_log("GET request at " + host);
+    in_cache = check_cache(ID, string(client_request.target()), host);
   }
+
+  if (in_cache) {
+    cache_entry cache_hit = cache.find(string(client_request.target()))->second;
+    std::string const cached_response_headers = boost::lexical_cast<std::string>(cache_hit.res_body.base());
+    http::write(client_socket, cache_hit.res_body);
+    write_log(to_string(ID) + ": Responding \"" +
+              cached_response_headers.substr(0, cached_response_headers.find("\n") - 1) + "\"");
+    if (cached_response_headers.find("200 OK") != std::string::npos) {
+      write_log(to_string(ID) + ": Tunnel closed"); 
+    }
+    return;
+  }
+
+  string const strHeaders = boost::lexical_cast<string>(forward_request.base());
+  write_log(to_string(ID) + ": Requesting \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + host);
 
   ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
 
   //Setting up the request body to send to server
   forward_request.target(path);
-
-  // cout << forwardRequest << endl;
 
   //Forward Request to Server
   http::write(server_socket, forward_request);
@@ -209,8 +232,6 @@ void forwardRequest(http::request<http::string_body> & client_request,
   write_log(to_string(ID) + ": Responding \"" +
             response_headers.substr(0, response_headers.find("\n") - 1) + "\"");
 
-  // store = store_cache_information(ID, response_headers);
-
   if (response_headers.find("200 OK") != std::string::npos) {
     if (client_request.method_string() == "GET") {
       exp_time = store_cache_information(ID, response_headers);
@@ -219,9 +240,9 @@ void forwardRequest(http::request<http::string_body> & client_request,
   }
   time_t t1 = mktime(&exp_time);
   time_t t2 = mktime(&zero_time);
-  if (difftime(t1, t2) > 0 && !in_cache) {
+  if (difftime(t1, t2) > 0) {
     const std::lock_guard<std::mutex> lock(cache_mtx);
-    cache_entry enter = {};
+    cache_entry enter = cache_entry{};
     enter.exp_time = exp_time;
     enter.res_body = response;
     cache.insert({string(client_request.target()), enter});

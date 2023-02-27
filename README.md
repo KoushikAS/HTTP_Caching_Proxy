@@ -13,14 +13,14 @@ To run the application
 docker-compose up -d
 ```
 
-Note: logs are available at logs/proxy.log
-
 ##Testing
 Ensure the proxy server is running and then type the command
 ```
 cd tests/
 bash test.sh
 ```
+Note: We have found that POST http://httpbin.org/post sometimes is down. If you see post request did not match please ensure that this server is up and try again.
+
 
 ##Logging
 To check the logs

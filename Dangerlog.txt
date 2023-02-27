@@ -1,0 +1,7 @@
+Handle Request not in proper format.
+Handle if the Client looses connection in between connect call.
+Handle Server loosing connection in between connect call.
+Handle deadlock if something happens during writing of log file.
+Handle deadlock if something happens during writing or read of cache.
+Socket clean up (i.e close of socket) is taken care by Boost lib.
+

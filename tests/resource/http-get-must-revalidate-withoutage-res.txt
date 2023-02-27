@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Cache-Control: must-revalidate
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 27 Feb 2023 16:06:30 GMT
+Content-Length: 51
+Sozu-Id: 01GT9T07ZE416YQQ96B5C3WQ6X
+
+"Cache-Control" : "must-revalidate" without max age

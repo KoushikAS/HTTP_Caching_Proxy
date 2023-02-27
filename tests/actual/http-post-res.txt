@@ -1,0 +1,28 @@
+HTTP/1.1 200 OK
+Date: Mon, 27 Feb 2023 16:46:46 GMT
+Content-Type: application/json
+Content-Length: 606
+Connection: keep-alive
+Server: gunicorn/19.9.0
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+
+{
+  "args": {}, 
+  "data": "custname=abc&custtel=123456789&custemail=a%40gmail.com&size=small&topping=cheese&delivery=14%3A15&comments=", 
+  "files": {}, 
+  "form": {}, 
+  "headers": {
+    "Accept": "*/*", 
+    "Accept-Encoding": "gzip, deflate, br", 
+    "Content-Length": "107", 
+    "Content-Type": "text/plain", 
+    "Host": "httpbin.org", 
+    "Postman-Token": "fa90649d-3884-45eb-a7c3-13606a59f2e6", 
+    "User-Agent": "PostmanRuntime/7.31.1", 
+    "X-Amzn-Trace-Id": "Root=1-63fcde47-09db178d413b023f613b1a22"
+  }, 
+  "json": null, 
+  "origin": "152.3.64.216", 
+  "url": "http://httpbin.org/post"
+}

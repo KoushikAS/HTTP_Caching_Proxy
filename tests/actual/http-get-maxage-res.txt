@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Cache-Control: max-age=3
+Content-Type: text/plain; charset=UTF-8
+Date: Mon, 27 Feb 2023 17:23:36 GMT
+Content-Length: 29
+Sozu-Id: 01GT9YDDYA0RR5GTM6QX1779TP
+
+"Cache-Control" : "max-age=3"

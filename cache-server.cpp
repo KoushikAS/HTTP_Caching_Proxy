@@ -1,7 +1,8 @@
 /**
 Citations:
 1) https://www.boost.org/doc/libs/1_80_0/libs/beast/example/http/server/sync/http_server_sync.cpp
-?????? https://www.boost.org/doc/libs/1_77_0/doc/html/boost_asio/example/cpp11/fork/daemon.cpp
+2) https://man7.org/linux/man-pages/man2/select.2.html
+3) https://www.geeksforgeeks.org/tcp-and-udp-server-using-select/
 */
 
 /**

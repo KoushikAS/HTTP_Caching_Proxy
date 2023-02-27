@@ -1,0 +1,8 @@
+GET http://run.mocky.io/v3/1dc54812-a741-409e-853b-a8b9d2f130f1 HTTP/1.1
+User-Agent: PostmanRuntime/7.31.1
+Accept: */*
+Postman-Token: ee3d33a2-fa2d-4f71-b087-a180162f750a
+Host: run.mocky.io
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+

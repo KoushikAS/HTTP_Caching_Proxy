@@ -1,0 +1,11 @@
+POST http://httpbin.org/post HTTP/1.1
+Content-Type: text/plain
+User-Agent: PostmanRuntime/7.31.1
+Accept: */*
+Postman-Token: fa90649d-3884-45eb-a7c3-13606a59f2e6
+Host: httpbin.org
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Content-Length: 107
+
+custname=abc&custtel=123456789&custemail=a%40gmail.com&size=small&topping=cheese&delivery=14%3A15&comments=

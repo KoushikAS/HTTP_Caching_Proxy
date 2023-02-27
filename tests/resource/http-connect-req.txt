@@ -1,0 +1,7 @@
+CONNECT www.google.com:443 HTTP/1.1
+User-Agent: PostmanRuntime/7.31.1
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+host: www.google.com:443
+

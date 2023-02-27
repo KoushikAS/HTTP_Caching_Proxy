@@ -72,7 +72,7 @@ fi
 
 cat resource/http-post-req.txt | netcat 127.0.0.1 12345  > actual/http-post-res.txt
 
-testing the header code
+#testing the header code
 diff --brief <(head -n 1 resource/http-post-res.txt) <(head -n 1 actual/http-post-res.txt) >/dev/null
 comp_value=$?
 

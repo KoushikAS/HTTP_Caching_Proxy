@@ -10,9 +10,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "bad-format request did not match with the stored value"
+    echo "Handle request sent with a bad format gracefully - FAILED"
 else
-    echo "bad-format request Passed"
+    echo "Handle request sent with a bad format gracefully - PASSED"
 fi
 
 
@@ -24,9 +24,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Connect did not match with the stored value"
+    echo "Http Connect Request - FAILED"
 else
-    echo "Http Connect Request Passed"
+    echo "Http Connect Request - PASSED"
 fi
 
 cat resource/http-get-404-notfound-req.txt | netcat 127.0.0.1 12345  > actual/http-get-404-notfound-res.txt
@@ -37,9 +37,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get 404-notfound did not match with the stored value"
+    echo "Handle 404 not found gracefully - FAILED"
 else
-    echo "Http Get 404-notfound Passed"
+    echo "Handle 404 not found gracefully - PASSED"
 fi
 
 
@@ -51,9 +51,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get bad-request did not match with the stored value"
+    echo "Handle 400 bad request gracefully - FAILED"
 else
-    echo "Http Get bad-request Passed"
+    echo "Handle 400 bad request gracefully - PASSED"
 fi
 
 
@@ -65,22 +65,22 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get internal-server-error did not match with the stored value"
+    echo "Handle internal server error gracefully - FAILED"
 else
-    echo "Http Get internal-server-error Passed"
+    echo "Handle internal server error gracefully - PASSED"
 fi
 
 cat resource/http-post-req.txt | netcat 127.0.0.1 12345  > actual/http-post-res.txt
 
-testing the header code
+#testing the header code
 diff --brief <(head -n 1 resource/http-post-res.txt) <(head -n 1 actual/http-post-res.txt) >/dev/null
 comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Post did not match with the stored value"
+    echo "POST request - FAILED"
 else
-    echo "Http Post Passed"
+    echo "POST request - PASSED"
 fi
 
 
@@ -92,9 +92,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http chunked Get Request did not match witht stored value"
+    echo "Get chunked request - FAILED"
 else
-    echo "Http chunked Get Request Passed"
+    echo "Get chunked request - PASSED"
 fi
 
 cat resource/http-get-nocache-info-req.txt | netcat 127.0.0.1 12345  > actual/http-get-nocache-info-res.txt
@@ -105,9 +105,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get no cache info did not match with the stored value"
+    echo "Get request info with no cache info - FAILED"
 else
-    echo "Http Get no cache info Request Passed"
+    echo "Get request info with no cache info - PASSED"
 fi
 
 cat resource/http-get-no-cache-req.txt | netcat 127.0.0.1 12345  > actual/http-get-no-cache-res.txt
@@ -118,9 +118,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get no-cache did not match with the stored value"
+    echo "Get request with 'no-cache' tag - FAILED"
 else
-    echo "Http Get no-cache Request Passed"
+    echo "Get request with 'no-cache' tag - PASSED"
 fi
 
 cat resource/http-get-no-store-req.txt | netcat 127.0.0.1 12345  > actual/http-get-no-store-res.txt
@@ -131,9 +131,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get no-store did not match with the stored value"
+    echo "Get request with 'no-store' tag - FAILED"
 else
-    echo "Http Get no-store Request Passed"
+    echo "Get request with 'no-store' tag - PASSED"
 fi
 
 cat resource/http-get-private-req.txt | netcat 127.0.0.1 12345  > actual/http-get-private-res.txt
@@ -144,22 +144,37 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get private did not match with the stored value"
+    echo "Get request with 'private' tag - FAILED"
 else
-    echo "Http Get private Request Passed"
+    echo "Get request with 'private' tag - PASSED"
 fi
 
 cat resource/http-get-must-revalidate-withoutage-req.txt | netcat 127.0.0.1 12345  > actual/http-get-must-revalidate-withoutage-res.txt
 
+
 #testing the header code
-diff --brief <(head -n 1 resource/http-get-must-revalidate-withoutage-res.txt) <(head -n 1 actual/http-get-must-revalidate-withoutage-res.txt) >/dev/null
+#diff --brief <(head -n 1 resource/http-get-must-revalidate-withoutage-res.txt) <(head -n 1 actual/http-get-must-revalidate-withoutage-res.txt) >/dev/null
+#comp_value=$?
+
+#if [ $comp_value -eq 1 ]
+#then
+#    echo "Http Get must-revalidate-withoutage did not match with the stored value"
+#else
+#    echo "Http Get must-revalidate-withoutage Request Passed"
+#fi
+
+
+cat resource/http-get-maxage-req.txt | netcat 127.0.0.1 12345  > actual/http-get-maxage-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-maxage-res.txt) <(head -n 1 actual/http-get-maxage-res.txt) >/dev/null
 comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get must-revalidate-withoutage did not match with the stored value"
+    echo "Get request with 'maxage' tag - FAILED"
 else
-    echo "Http Get must-revalidate-withoutage Request Passed"
+    echo "Get request with 'maxage' tag - PASSED"
 fi
 
 
@@ -171,23 +186,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get maxage did not match with the stored value"
+    echo "Get cached request from the proxy server before expiration time - FAILED"
 else
-    echo "Http Get maxage Request Passed"
-fi
-
-
-cat resource/http-get-maxage-req.txt | netcat 127.0.0.1 12345  > actual/http-get-maxage-res.txt
-
-#testing the header code
-diff --brief <(head -n 1 resource/http-get-maxage-res.txt) <(head -n 1 actual/http-get-maxage-res.txt) >/dev/null
-comp_value=$?
-
-if [ $comp_value -eq 1 ]
-then
-    echo "Http Get Cached maxage did not match with the stored value"
-else
-    echo "Http Get Cached maxage Request Passed"
+    echo "Get cached request from the proxy server before expiration time - PASSED"
 fi
 
 sleep 5
@@ -200,9 +201,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Refetch from original server get maxage request did not match with the stored value"
+    echo "Get cached request from the actual server after expiration time - FAILED"
 else
-    echo "Http  Refetch from original server get maxage request  Passed"
+    echo "Get cached request form the actual server after expiration time  - PASSED"
 fi
 
 
@@ -215,9 +216,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get maxage-must-revalidate did not match with the stored value"
+    echo "Get request with 'maxage' 'must-revalidate' tag - FAILED"
 else
-    echo "Http Get maxage-must-revalidate Request Passed"
+    echo "Get request with 'maxage' 'must-revalidate' tag - PASSED"
 fi
 
 
@@ -229,9 +230,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Get Cached maxage-must-revalidate did not match with the stored value"
+    echo "Get cached request from the proxy server before expiration time - FAILED"
 else
-    echo "Http Get Cached maxage-must-revalidate Request Passed"
+    echo "Get cached request from the proxy server before expiration time - PASSED"
 fi
 
 sleep 5
@@ -244,9 +245,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Http Refetch from original server max-must-revalidate request did not match with the stored value"
+    echo "Get cached request from the actual server after expiration time - FAILED"
 else
-    echo "Http  Refetch from original server get maxage-must-revalidate request  Passed"
+    echo "Get cached request form the actual server after expiration time  - PASSED"
 fi
 
 

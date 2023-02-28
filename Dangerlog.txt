@@ -1,19 +1,22 @@
 Exception Guranteee: Basic Exception Gurantee.
-   We ensure that if an exception occurs then no resources is leaked. We follow RAII standards while using mutex locks (Therefore locks are released if any exception occurs) Additionally Boost library has a destructor which closes all socket connection. Hence no socket file descriptor is leaked during exception.  
+   We ensure that if an exception occurs then no resources is leaked. We follow RAII standards while using mutex locks (Therefore locks are released if any exception occurs) Additionally Boost library has a destructor which closes all socket connection. Hence no socket file descriptor is leaked during exception. Allocated heap memory is also released.
           
 Robustness to External exceptions:
 
-1)Handle Request not in proper format.
-         We have special error checking mechanisim to check if the request is partially sent or is not supported by our proxy server. (i.e not GET, POST, Connect). We later send a 400 Bad Request to client and handle the situation gracefully.
+1) Handle Request not in proper format.
+         We have special error checking mechanisim to check if the request is partially sent or is not supported by our proxy server. (i.e not GET, POST, Connect). We later send a 400 Bad Request to client and handle the situation gracefully. This searches if a request is broken, or if certain directives in the cache are malformatted.
           
-2)Handle if the Client/Server looses connection in between connect call.
-         We wait for 5 seconds to see if there is any activity from both the end. If not we close the connection gracefully
+2) Handle if the Client/Server looses connection in between connect call.
+         We wait for 5 seconds to see if there is any activity from both the end. If not we close the connection gracefully.
 
-3)Handle deadlock to common resources (i.e log file/ cache resource).
+3) Handle deadlock to common resources (i.e log file/ cache resource).
           We have used RAII mutex locking mechanism to ensure that mutex locks are released if in case there is any error during updation of log file or cache resource
           
-4)Handle Socket close in case of any exception.
+4) Handle Socket close in case of any exception.
          Since boost library takes care of closing of sockets through its destructors. We are sure that all sockets are closed in case of any exceptions.
+
+5) General code exceptions.
+         We have attempted to prevent all general code exceptions through robust input checking to called functions, especially when input is received from outside sources.
 
 
 

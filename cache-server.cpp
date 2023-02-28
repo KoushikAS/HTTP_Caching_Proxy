@@ -32,6 +32,7 @@ https://www.rfc-editor.org/rfc/rfc7234#section-5.2.1.5
 #include <ctime>
 #include <regex>
 #include <unordered_map>
+#include <utility>
 
 using namespace std;
 using namespace boost::beast;
@@ -45,7 +46,8 @@ std::mutex cache_mtx;
 ofstream logfile;
 
 struct cache_entry {
-  struct tm exp_time;
+  time_t res_time;
+  time_t exp_time;
   http::response<http::dynamic_body> res_body;
 };
 
@@ -84,13 +86,13 @@ void print_cache() {
   cout << "Printing the cache!" << endl;
   int i = 1;
   for (const auto & elem : cache) {
-    cout << i << ": " << elem.first << ":\n" << asctime(&elem.second.exp_time) << elem.second.res_body << "\n";
+    cout << i << ": " << elem.first << ":\n" << asctime(localtime(&elem.second.res_time)) << asctime(localtime(&elem.second.exp_time)) << elem.second.res_body << "\n";
     i++;
   }
   cout << "-------------------------------" << endl;
 }
 
-bool check_cache(int ID, string req, string host) {
+bool check_cache(int ID, string req, string host, int max_age, int max_stale, int min_fresh) {
   const std::lock_guard<std::mutex> lock(cache_mtx); // might need to change this to not lock for entire scope
   if (cache.find(req) != cache.end()) {
     cache_entry cache_hit = cache.find(req)->second;
@@ -106,18 +108,34 @@ bool check_cache(int ID, string req, string host) {
         smatch exp_match;
         string const temp = match[2].str();
         regex_search(temp, exp_match, rgx_exp);
-        int max_age = stoi(exp_match[2].str());
-        if (max_age == 0) {
+        int entry_max_age = stoi(exp_match[2].str());
+        if (entry_max_age == 0) {
           write_log(to_string(ID) + ": in cache, requires validation");
         } else {
+          // add logic for client max-fresh
           time_t now = time(NULL);
-          time_t t2 = mktime(&cache_hit.exp_time);
-          if (difftime(now, t2) > 0) {
-            write_log(to_string(ID) + ": in cache, but expired at " + asctime(&cache_hit.exp_time));
-          } else {
+          int expire_time = cache_hit.exp_time; // server expire time
+          if (max_age != -1) {
+            if (cache_hit.res_time + max_age < expire_time) { // override if the clients max age is less
+              expire_time = cache_hit.res_time + max_age;
+              write_log(to_string(ID) + ": NOTE=using client max-age over cache max-age");
+            }
+          }
+
+          if (difftime(now + min_fresh, expire_time) <= 0) {
             write_log(to_string(ID) + ": in cache, valid");
             return true;
           }
+          else if (difftime(now + min_fresh, expire_time + max_stale) <= 0) {
+            write_log(to_string(ID) + ": in cache, valid");
+            write_log(to_string(ID) + ": NOTE=expired but accepted due to max-stale value");
+            return true;
+          }
+          else if (difftime(now + min_fresh, expire_time + max_stale) > 0) { // can just be an else
+            char date_time_string[100];
+            strncpy(date_time_string, asctime(localtime(&cache_hit.exp_time)), strlen(asctime(localtime(&cache_hit.exp_time))) - 1);
+            write_log(to_string(ID) + ": in cache, but expired at " + date_time_string);
+          } 
         }
       }
     }
@@ -131,53 +149,58 @@ bool check_cache(int ID, string req, string host) {
   return false;
 }
 
-struct tm store_cache_information(int ID, string resp) {
-  // std::string const str = "something: uiarg\nCache-Control: eruhguiaregnaergnireag\nsomethingelse: sgarngareikgerg\n";
+pair<time_t, time_t> store_cache_information(int ID, string resp) {
   regex rg_cache("(Cache\\-Control\\: (.*))");
   smatch match;
-  struct tm zero_time = {0};
-  time_t now = time(NULL);
-  struct tm now_time = *localtime(&now);
+  pair<time_t, time_t> times;
+  time_t zero_time = 0;
+  time_t request_time = time(NULL);
+  // struct tm request_time = *gmtime(&now);
+  times.first = request_time;
 
   if (regex_search(resp, match, rg_cache)) {
     // contains a Cache-Control tag
     if (match[2].str().find("no-store") != string::npos || match[2].str().find("private") != string::npos) {
       write_log(to_string(ID) + ": not cacheable because " + "no-store/private flag");
-      return zero_time;
+      times.second = zero_time;
     }
     else if (match[2].str().find("no-cache") != string::npos) {
       write_log(to_string(ID) + ": cached, but requires re-validation");
-      return now_time;
+      times.second = request_time;
     }
     else if (match[2].str().find("max-age") != string::npos) {
       regex rgx_exp("(max\\-age\\=([0-9]+))");
       smatch exp_match;
       string const temp = match[2].str();
-      regex_search(temp, exp_match, rgx_exp);
+      if (!regex_search(temp, exp_match, rgx_exp)) {
+        cout << "This is a possible error, what to do here" << endl;
+      }
       int max_age = stoi(exp_match[2].str());
       if (max_age == 0 && match[2].str().find("must-revalidate") != string::npos) {
         write_log(to_string(ID) + ": cached, but requires re-validation");
       }
       else {
-        now_time.tm_sec += max_age;
-        mktime(&now_time);
-        write_log(to_string(ID) + ": cached, but expires at " + asctime(&now_time));
+        request_time += max_age;
+        char date_time_string[100];
+        strncpy(date_time_string, asctime(localtime(&request_time)), strlen(asctime(localtime(&request_time))) - 1);
+        write_log(to_string(ID) + ": cached, expires at " + date_time_string);
       }
-      return now_time;
+      times.second = request_time;
     }
     else if (match[2].str().find("must-revalidate") != string::npos) { // should never need but is just an error catching case?
-      write_log(to_string(ID) + ": cached, but expires at " + "No Expire Time Given");
-      return now_time;
+      write_log(to_string(ID) + ": cached, expires at " + "No Expire Time Given");
+      times.second = request_time;
     }
     else {
       write_log(to_string(ID) + ": not cacheable because " + "Cache-Control flag there, but had no cache information");
-      return zero_time;
+      times.second = zero_time;
     }
   }
   else {
     write_log(to_string(ID) + ": not cacheable because " + "server gave no cache information");
-    return zero_time;
+    times.second = zero_time;
   }
+  return times;
 }
 
 void forwardRequest(http::request<http::string_body> & client_request,
@@ -189,12 +212,50 @@ void forwardRequest(http::request<http::string_body> & client_request,
   string port = HTTP_PORT;
   string path = parsePath(string(client_request.target()), host);
   http::request<http::string_body> forward_request = client_request;
-  struct tm exp_time;
-  struct tm zero_time = {0};
+  string const strHeaders = boost::lexical_cast<string>(forward_request.base());
+  // cache return object
+  pair<time_t, time_t> times;
   bool in_cache = false;
 
   if (client_request.method_string() == "GET") {
-    in_cache = check_cache(ID, string(client_request.target()), host);
+    regex rgx_cache("(Cache\\-Control\\: (.*))");
+    regex age_rgx("(max\\-age\\=([0-9]+))");
+    regex stale_rgx("(max\\-stale\\=([0-9]+))");
+    regex fresh_rgx("(max\\-fresh\\=([0-9]+))");
+    smatch match, age_match, stale_match, fresh_match;
+    int max_age_client = -1;
+    int max_stale = 0;
+    int min_fresh = 0;
+    if (regex_search(strHeaders, match, rgx_cache)) {
+      if (match[2].str().find("max-age") != string::npos) {
+        string const age_str = match[2].str();
+        if (!regex_search(age_str, age_match, age_rgx)) {
+          write_log("ERROR malformatted max-age field in request");
+          // Need to send something back to the user about a poorly formatted request?
+          return;
+        }
+        max_age_client = stoi(age_match[2].str());
+      }
+      if (match[2].str().find("max-stale") != string::npos) {
+        string const stale_str = match[2].str();
+        if (!regex_search(stale_str, stale_match, stale_rgx)) {
+          write_log("ERROR malformatted max-stale field in request");
+          // Need to send something back to the user about a poorly formatted request?
+          return;
+        }
+        max_stale = stoi(stale_match[2].str());
+      }
+      if (match[2].str().find("min-fresh") != string::npos) {
+        string const fresh_str = match[2].str();
+        if (!regex_search(fresh_str, fresh_match, fresh_rgx)) {
+          write_log("ERROR malformatted max-stale field in request");
+          // Need to send something back to the user about a poorly formatted request?
+          return;
+        }
+        min_fresh = stoi(fresh_match[2].str());
+      }
+    }
+    in_cache = check_cache(ID, string(client_request.target()), host, max_age_client, max_stale, min_fresh);
   }
 
   if (in_cache) {
@@ -209,7 +270,6 @@ void forwardRequest(http::request<http::string_body> & client_request,
     return;
   }
 
-  string const strHeaders = boost::lexical_cast<string>(forward_request.base());
   write_log(to_string(ID) + ": Requesting \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + host);
 
   ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
@@ -235,16 +295,16 @@ void forwardRequest(http::request<http::string_body> & client_request,
 
   if (response_headers.find("200 OK") != std::string::npos) {
     if (client_request.method_string() == "GET") {
-      exp_time = store_cache_information(ID, response_headers);
+      times = store_cache_information(ID, response_headers);
     }
-    write_log(to_string(ID) + ": Tunnel closed"); 
+    write_log(to_string(ID) + ": Tunnel closed");
   }
-  time_t t1 = mktime(&exp_time);
-  time_t t2 = mktime(&zero_time);
-  if (difftime(t1, t2) > 0) {
+
+  if (difftime(times.second, times.first) >= 0) {
     const std::lock_guard<std::mutex> lock(cache_mtx);
     cache_entry enter = cache_entry{};
-    enter.exp_time = exp_time;
+    enter.res_time = times.first;
+    enter.exp_time = times.second;
     enter.res_body = response;
     cache.insert({string(client_request.target()), enter});
   }
@@ -383,7 +443,7 @@ int main(int argc, char ** argv) {
   io_context ioc{1};
   //Listen to new connection
   ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
-  int ID = 100;
+  int ID = 100; // care about starting at 1 or 100?
 
   while (true) {
     // make a new socket for the client

@@ -174,7 +174,10 @@ pair<time_t, time_t> store_cache_information(int ID, string resp) {
       smatch exp_match;
       string const temp = match[2].str();
       if (!regex_search(temp, exp_match, rgx_exp)) {
-        cout << "This is a possible error, what to do here" << endl;
+        write_log("ERROR malformatted max-age field in response");
+        times.first = zero_time;
+        times.second = zero_time;
+        return times;
       }
       int max_age = stoi(exp_match[2].str());
       if (max_age == 0 && match[2].str().find("must-revalidate") != string::npos) {
@@ -302,6 +305,10 @@ void forwardRequest(http::request<http::string_body> & client_request,
   if (response_headers.find("200 OK") != std::string::npos) {
     if (client_request.method_string() == "GET") {
       times = store_cache_information(ID, response_headers);
+      if (difftime(times.first, 0) == 0) {
+        write_log("ERROR malformatted max-age field in response, not added to cache");
+        return;
+      }
       if (difftime(times.second, times.first) >= 0) {
         const std::lock_guard<std::mutex> lock(cache_mtx);
         cache_entry enter = cache_entry{};

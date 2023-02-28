@@ -289,10 +289,12 @@ else
     echo "Get cached request from the actual server after expiration time  - PASSED"
 fi
 
-cat resource/http-get-maxage-reval-2-req.txt | netcat 127.0.0.1 12345  > actual/http-get-maxage-reval-2-res.txt
+sleep 5
+# cache directive tests
+cat resource/http-get-req-client-maxage-12-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxage-12-res.txt
 
 #testing the header code
-diff --brief <(head -n 1 resource/http-get-maxage-reval-2-res.txt) <(head -n 1 actual/http-get-maxage-reval-2-res.txt) >/dev/null
+diff --brief <(head -n 1 resource/http-get-req-client-maxage-12-res.txt) <(head -n 1 actual/http-get-req-client-maxage-12-res.txt) >/dev/null
 comp_value=$?
 
 if [ $comp_value -eq 1 ]
@@ -302,21 +304,76 @@ else
     echo "Get from server with max-age 10 - PASSED"
 fi
 
-cat resource/http-get-maxage-reval-2-req.txt | netcat 127.0.0.1 12345  > actual/http-get-maxage-reval-2-res.txt
+cat resource/http-get-req-client-maxage-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxage-5-res.txt
 
 #testing the header code
-diff --brief <(head -n 1 resource/http-get-maxage-reval-2-res.txt) <(head -n 1 actual/http-get-maxage-reval-2-res.txt) >/dev/null
+diff --brief <(head -n 1 resource/http-get-req-client-maxage-5-res.txt) <(head -n 1 actual/http-get-req-client-maxage-5-res.txt) >/dev/null
 comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Get from server with max-age 12 - FAILED"
+    echo "Get from cache with max-age of client used - FAILED"
 else
-    echo "Get from server with max-age 12 - PASSED"
+    echo "Get from cache with max-age of client used - PASSED"
 fi
 
+cat resource/http-get-req-client-minfresh-2-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-minfresh-2-res.txt
 
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-client-minfresh-2-res.txt) <(head -n 1 actual/http-get-req-client-minfresh-2-res.txt) >/dev/null
+comp_value=$?
 
+if [ $comp_value -eq 1 ]
+then
+    echo "Get from cache with min-fresh still valid - FAILED"
+else
+    echo "Get from cache with min-fresh still valid - PASSED"
+fi
+
+sleep 5
+
+cat resource/http-get-req-client-minfresh-7-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-minfresh-7-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-client-minfresh-7-res.txt) <(head -n 1 actual/http-get-req-client-minfresh-7-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Get from cache with min-fresh not valid - FAILED"
+else
+    echo "Get from cache with min-fresh not valid - PASSED"
+fi
+
+sleep 5
+
+cat resource/http-get-req-client-maxstale-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxstale-5-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-client-maxstale-5-res.txt) <(head -n 1 actual/http-get-req-client-maxstale-5-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Get from cache expired but within max-stale - FAILED"
+else
+    echo "Get from cache expired but within max-stale - PASSED"
+fi
+
+sleep 5
+
+cat resource/http-get-req-client-maxstale-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxstale-5-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-client-maxstale-5-res.txt) <(head -n 1 actual/http-get-req-client-maxstale-5-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Get from cache expired and not within max-stale - FAILED"
+else
+    echo "Get from cache expired and not within max-stale - PASSED"
+fi
 
 
 echo "Finished Testing"

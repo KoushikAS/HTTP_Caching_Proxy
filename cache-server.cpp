@@ -424,7 +424,7 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
 
   //Error check
   if (error == http::error::end_of_stream || error == http::error::partial_message) {
-    write_log(to_string(ID) + ": WARNING " + error.message() + "Sending Bad Request");
+    write_log(to_string(ID) + ": WARNING " + error.message() + ", Sending Bad Request");
     //Send a Response 400 Bad Request back to client
     http::response<http::string_body> response{http::status::bad_request,
                                                request.version()};

@@ -4,7 +4,7 @@
 
 #Authors 
 Koushik Annareddy Sreenath (ka266)
-Ryan Mecca (rm-358)
+Ryan Mecca (rm358)
 
 ## Getting started
 To run the application 

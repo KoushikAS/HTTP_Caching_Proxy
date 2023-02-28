@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Cache-Control: private
+Content-Type: text/plain; charset=UTF-8
+Date: Tue, 28 Feb 2023 13:08:01 GMT
+Content-Length: 26
+Sozu-Id: 01GTC2655QD6K0PR49MY706G38
+
+"Cache-Control" :"private"

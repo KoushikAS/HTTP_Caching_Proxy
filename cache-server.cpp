@@ -29,7 +29,6 @@ https://www.rfc-editor.org/rfc/rfc7234#section-5.2.1.5
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <ctime>
 #include <regex>
 #include <unordered_map>
 #include <utility>
@@ -96,7 +95,8 @@ bool check_cache(int ID, string req, string host, int max_age, int max_stale, in
   const std::lock_guard<std::mutex> lock(cache_mtx); // might need to change this to not lock for entire scope
   if (cache.find(req) != cache.end()) {
     cache_entry cache_hit = cache.find(req)->second;
-    std::string const response_header = boost::lexical_cast<std::string>(cache_hit.res_body.base());
+    std::string const response_header =
+        boost::lexical_cast<std::string>(cache_hit.res_body.base());
     regex rg_cache("(Cache\\-Control\\: (.*))");
     smatch match;
     if (regex_search(response_header, match, rg_cache)) {
@@ -139,7 +139,7 @@ bool check_cache(int ID, string req, string host, int max_age, int max_stale, in
         }
       }
     }
-    else { // should never trigger, error checking
+    else {  // should never trigger, error checking
       write_log(to_string(ID) + ": not in cache");
     }
   }
@@ -160,7 +160,8 @@ pair<time_t, time_t> store_cache_information(int ID, string resp) {
 
   if (regex_search(resp, match, rg_cache)) {
     // contains a Cache-Control tag
-    if (match[2].str().find("no-store") != string::npos || match[2].str().find("private") != string::npos) {
+    if (match[2].str().find("no-store") != string::npos ||
+        match[2].str().find("private") != string::npos) {
       write_log(to_string(ID) + ": not cacheable because " + "no-store/private flag");
       times.second = zero_time;
     }
@@ -231,7 +232,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
         string const age_str = match[2].str();
         if (!regex_search(age_str, age_match, age_rgx)) {
           write_log("ERROR malformatted max-age field in request");
-          // Need to send something back to the user about a poorly formatted request?
+          http::response<http::string_body> response{http::status::bad_request, client_request.version()};
+          http::write(client_socket, response);
           return;
         }
         max_age_client = stoi(age_match[2].str());
@@ -240,7 +242,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
         string const stale_str = match[2].str();
         if (!regex_search(stale_str, stale_match, stale_rgx)) {
           write_log("ERROR malformatted max-stale field in request");
-          // Need to send something back to the user about a poorly formatted request?
+          http::response<http::string_body> response{http::status::bad_request, client_request.version()};
+          http::write(client_socket, response);
           return;
         }
         max_stale = stoi(stale_match[2].str());
@@ -249,7 +252,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
         string const fresh_str = match[2].str();
         if (!regex_search(fresh_str, fresh_match, fresh_rgx)) {
           write_log("ERROR malformatted max-stale field in request");
-          // Need to send something back to the user about a poorly formatted request?
+          http::response<http::string_body> response{http::status::bad_request, client_request.version()};
+          http::write(client_socket, response);
           return;
         }
         min_fresh = stoi(fresh_match[2].str());
@@ -260,12 +264,14 @@ void forwardRequest(http::request<http::string_body> & client_request,
 
   if (in_cache) {
     cache_entry cache_hit = cache.find(string(client_request.target()))->second;
-    std::string const cached_response_headers = boost::lexical_cast<std::string>(cache_hit.res_body.base());
+    std::string const cached_response_headers =
+        boost::lexical_cast<std::string>(cache_hit.res_body.base());
     http::write(client_socket, cache_hit.res_body);
     write_log(to_string(ID) + ": Responding \"" +
-              cached_response_headers.substr(0, cached_response_headers.find("\n") - 1) + "\"");
+              cached_response_headers.substr(0, cached_response_headers.find("\n") - 1) +
+              "\"");
     if (cached_response_headers.find("200 OK") != std::string::npos) {
-      write_log(to_string(ID) + ": Tunnel closed"); 
+      write_log(to_string(ID) + ": Tunnel closed");
     }
     return;
   }
@@ -296,17 +302,21 @@ void forwardRequest(http::request<http::string_body> & client_request,
   if (response_headers.find("200 OK") != std::string::npos) {
     if (client_request.method_string() == "GET") {
       times = store_cache_information(ID, response_headers);
+      if (difftime(times.second, times.first) >= 0) {
+        const std::lock_guard<std::mutex> lock(cache_mtx);
+        cache_entry enter = cache_entry{};
+        enter.res_time = times.first;
+        enter.exp_time = times.second;
+        enter.res_body = response;
+        if (cache.find(string(client_request.target())) != cache.end()) {
+          cache.at(string(client_request.target())) = enter;
+        }
+        else {
+          cache.insert({string(client_request.target()), enter});
+        }
+      }
     }
     write_log(to_string(ID) + ": Tunnel closed");
-  }
-
-  if (difftime(times.second, times.first) >= 0) {
-    const std::lock_guard<std::mutex> lock(cache_mtx);
-    cache_entry enter = cache_entry{};
-    enter.res_time = times.first;
-    enter.exp_time = times.second;
-    enter.res_body = response;
-    cache.insert({string(client_request.target()), enter});
   }
   return;
 }
@@ -404,7 +414,11 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
 
   //Error check
   if (error == http::error::end_of_stream || error == http::error::partial_message) {
-    write_log(to_string(ID) + ": WARNING " + error.message());
+    write_log(to_string(ID) + ": WARNING " + error.message() + "Sending Bad Request");
+    //Send a Response 400 Bad Request back to client
+    http::response<http::string_body> response{http::status::bad_request,
+                                               request.version()};
+    http::write(socket, response);
     socket.shutdown(ip::tcp::socket::shutdown_both);
     return;
   }
@@ -428,7 +442,12 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
     forwardRequest(request, ioc, socket, ID);
   }
   else {
-    write_log(to_string(ID) + ": WARNING Unknown HTTP request made");
+    write_log(to_string(ID) +
+              ": WARNING Unknown HTTP request made Responding 400 Bad request");
+    //Send a Response 400 Bad Request back to client
+    http::response<http::string_body> response{http::status::bad_request,
+                                               request.version()};
+    http::write(socket, response);
   }
 
   socket.shutdown(ip::tcp::socket::shutdown_both);

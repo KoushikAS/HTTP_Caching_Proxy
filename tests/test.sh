@@ -25,7 +25,7 @@ if [ $comp_value -eq 1 ]
 then
     echo "Handle malformed 'maxage' tag request gracefully - FAILED"
 else
-    echo "Handle malformed 'maxage' tage response gracefully - PASSED"
+    echo "Handle malformed 'maxage' tag response gracefully - PASSED"
 fi
 
 cat resource/http-get-req-maxstale-bad-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-maxstale-bad-res.txt
@@ -38,7 +38,7 @@ if [ $comp_value -eq 1 ]
 then
     echo "Handle malformed 'maxstale' tag request gracefully - FAILED"
 else
-    echo "Handle malformed 'maxstale' tage response gracefully - PASSED"
+    echo "Handle malformed 'maxstale' tag response gracefully - PASSED"
 fi
 
 cat resource/http-get-req-minfresh-bad-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-minfresh-bad-res.txt
@@ -51,7 +51,7 @@ if [ $comp_value -eq 1 ]
 then
     echo "Handle malformed 'minfresh' tag request gracefully - FAILED"
 else
-    echo "Handle malformed 'minfresh' tage response gracefully - PASSED"
+    echo "Handle malformed 'minfresh' tag response gracefully - PASSED"
 fi
 
 
@@ -310,9 +310,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "Get from server with max-age 10 - FAILED"
+    echo "Get from server with max-age 12 - FAILED"
 else
-    echo "Get from server with max-age 10 - PASSED"
+    echo "Get from server with max-age 12 - PASSED"
 fi
 
 

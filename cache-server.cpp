@@ -228,7 +228,7 @@ void forwardRequest(http::request<http::string_body> & client_request,
     regex rgx_cache("(Cache\\-Control\\: (.*))");
     regex age_rgx("(max\\-age\\=([0-9]+))");
     regex stale_rgx("(max\\-stale\\=([0-9]+))");
-    regex fresh_rgx("(max\\-fresh\\=([0-9]+))");
+    regex fresh_rgx("(min\\-fresh\\=([0-9]+))");
     smatch match, age_match, stale_match, fresh_match;
     int max_age_client = -1;
     int max_stale = 0;

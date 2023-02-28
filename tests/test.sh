@@ -49,9 +49,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "3) Handle malformed 'minfresh' tag request gracefully - FAILED"
+    echo "4) Handle malformed 'minfresh' tag request gracefully - FAILED"
 else
-    echo "3) Handle malformed 'minfresh' tag response gracefully - PASSED"
+    echo "4) Handle malformed 'minfresh' tag response gracefully - PASSED"
 fi
 
 
@@ -63,9 +63,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "4) Http Connect Request - FAILED"
+    echo "5) Http Connect Request - FAILED"
 else
-    echo "4) Http Connect Request - PASSED"
+    echo "5) Http Connect Request - PASSED"
 fi
 
 cat resource/http-get-404-notfound-req.txt | netcat 127.0.0.1 12345  > actual/http-get-404-notfound-res.txt
@@ -76,9 +76,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "5) Handle 404 not found gracefully - FAILED"
+    echo "6) Handle 404 not found gracefully - FAILED"
 else
-    echo "5) Handle 404 not found gracefully - PASSED"
+    echo "6) Handle 404 not found gracefully - PASSED"
 fi
 
 
@@ -90,9 +90,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "6) Handle 400 bad request gracefully - FAILED"
+    echo "7) Handle 400 bad request gracefully - FAILED"
 else
-    echo "6) Handle 400 bad request gracefully - PASSED"
+    echo "7) Handle 400 bad request gracefully - PASSED"
 fi
 
 
@@ -104,9 +104,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "7) Handle internal server error gracefully - FAILED"
+    echo "8) Handle internal server error gracefully - FAILED"
 else
-    echo "7) Handle internal server error gracefully - PASSED"
+    echo "8) Handle internal server error gracefully - PASSED"
 fi
 
 cat resource/http-post-req.txt | netcat 127.0.0.1 12345  > actual/http-post-res.txt
@@ -131,9 +131,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "8) Get chunked request - FAILED"
+    echo "9) Get chunked request - FAILED"
 else
-    echo "8) Get chunked request - PASSED"
+    echo "9) Get chunked request - PASSED"
 fi
 
 cat resource/http-get-nocache-info-req.txt | netcat 127.0.0.1 12345  > actual/http-get-nocache-info-res.txt
@@ -144,9 +144,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "9) Get request info with no cache info - FAILED"
+    echo "10) Get request info with no cache info - FAILED"
 else
-    echo "9) Get request info with no cache info - PASSED"
+    echo "10) Get request info with no cache info - PASSED"
 fi
 
 cat resource/http-get-no-cache-req.txt | netcat 127.0.0.1 12345  > actual/http-get-no-cache-res.txt
@@ -157,9 +157,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "10) Get request with 'no-cache' tag - FAILED"
+    echo "11) Get request with 'no-cache' tag - FAILED"
 else
-    echo "10) Get request with 'no-cache' tag - PASSED"
+    echo "11) Get request with 'no-cache' tag - PASSED"
 fi
 
 cat resource/http-get-no-store-req.txt | netcat 127.0.0.1 12345  > actual/http-get-no-store-res.txt
@@ -170,9 +170,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "11) Get request with 'no-store' tag - FAILED"
+    echo "12) Get request with 'no-store' tag - FAILED"
 else
-    echo "11) Get request with 'no-store' tag - PASSED"
+    echo "12) Get request with 'no-store' tag - PASSED"
 fi
 
 cat resource/http-get-private-req.txt | netcat 127.0.0.1 12345  > actual/http-get-private-res.txt
@@ -183,9 +183,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "12) Get request with 'private' tag - FAILED"
+    echo "13) Get request with 'private' tag - FAILED"
 else
-    echo "12) Get request with 'private' tag - PASSED"
+    echo "13) Get request with 'private' tag - PASSED"
 fi
 
 cat resource/http-get-must-revalidate-withoutage-req.txt | netcat 127.0.0.1 12345  > actual/http-get-must-revalidate-withoutage-res.txt
@@ -211,9 +211,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "13) Get request with 'maxage' tag - FAILED"
+    echo "14) Get request with 'maxage' tag - FAILED"
 else
-    echo "13) Get request with 'maxage' tag - PASSED"
+    echo "14) Get request with 'maxage' tag - PASSED"
 fi
 
 
@@ -225,9 +225,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "14) Get cached request from the proxy server before expiration time - FAILED"
+    echo "15) Get cached request from the proxy server before expiration time - FAILED"
 else
-    echo "14) Get cached request from the proxy server before expiration time - PASSED"
+    echo "15) Get cached request from the proxy server before expiration time - PASSED"
 fi
 
 sleep 5
@@ -240,9 +240,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "15) Get cached request from the actual server after expiration time - FAILED"
+    echo "16) Get cached request from the actual server after expiration time - FAILED"
 else
-    echo "15) Get cached request form the actual server after expiration time  - PASSED"
+    echo "16) Get cached request form the actual server after expiration time  - PASSED"
 fi
 
 
@@ -255,9 +255,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "16) Get request with 'maxage' 'must-revalidate' tag - FAILED"
+    echo "17) Get request with 'maxage' 'must-revalidate' tag - FAILED"
 else
-    echo "16) Get request with 'maxage' 'must-revalidate' tag - PASSED"
+    echo "17) Get request with 'maxage' 'must-revalidate' tag - PASSED"
 fi
 
 
@@ -269,9 +269,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "17) Get cached request from the proxy server before expiration time - FAILED"
+    echo "18) Get cached request from the proxy server before expiration time - FAILED"
 else
-    echo "17) Get cached request from the proxy server before expiration time - PASSED"
+    echo "18) Get cached request from the proxy server before expiration time - PASSED"
 fi
 
 sleep 5
@@ -284,9 +284,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "18) Get cached request from the actual server after expiration time - FAILED"
+    echo "19) Get cached request from the actual server after expiration time - FAILED"
 else
-    echo "18) Get cached request from the actual server after expiration time  - PASSED"
+    echo "19) Get cached request from the actual server after expiration time  - PASSED"
 fi
 
 sleep 5
@@ -299,9 +299,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "19) Get from server with max-age 10 - FAILED"
+    echo "20) Get from server with max-age 10 - FAILED"
 else
-    echo "19) Get from server with max-age 10 - PASSED"
+    echo "20) Get from server with max-age 10 - PASSED"
 fi
 
 cat resource/http-get-req-client-maxage-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxage-5-res.txt
@@ -312,9 +312,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "20) Get from cache with max-age of client used - FAILED"
+    echo "21) Get from cache with max-age of client used - FAILED"
 else
-    echo "20) Get from cache with max-age of client used - PASSED"
+    echo "21) Get from cache with max-age of client used - PASSED"
 fi
 
 cat resource/http-get-req-client-minfresh-2-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-minfresh-2-res.txt
@@ -325,9 +325,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "21) Get from cache with min-fresh still valid - FAILED"
+    echo "22) Get from cache with min-fresh still valid - FAILED"
 else
-    echo "21) Get from cache with min-fresh still valid - PASSED"
+    echo "22) Get from cache with min-fresh still valid - PASSED"
 fi
 
 sleep 5
@@ -340,12 +340,12 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "22) Get from cache with min-fresh not valid - FAILED"
+    echo "23) Get from cache with min-fresh not valid - FAILED"
 else
-    echo "22) Get from cache with min-fresh not valid - PASSED"
+    echo "23) Get from cache with min-fresh not valid - PASSED"
 fi
 
-sleep 5
+sleep 15
 
 cat resource/http-get-req-client-maxstale-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxstale-5-res.txt
 
@@ -355,12 +355,12 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "23) Get from cache expired but within max-stale - FAILED"
+    echo "24) Get from cache expired but within max-stale - FAILED"
 else
-    echo "23) Get from cache expired but within max-stale - PASSED"
+    echo "24) Get from cache expired but within max-stale - PASSED"
 fi
 
-sleep 5
+sleep 10
 
 cat resource/http-get-req-client-maxstale-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxstale-5-res.txt
 
@@ -370,9 +370,9 @@ comp_value=$?
 
 if [ $comp_value -eq 1 ]
 then
-    echo "24) Get from cache expired and not within max-stale - FAILED"
+    echo "25) Get from cache expired and not within max-stale - FAILED"
 else
-    echo "24) Get from cache expired and not within max-stale - PASSED"
+    echo "25) Get from cache expired and not within max-stale - PASSED"
 fi
 
 

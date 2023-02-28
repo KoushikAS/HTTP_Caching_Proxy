@@ -85,14 +85,22 @@ void print_cache() {
   cout << "Printing the cache!" << endl;
   int i = 1;
   for (const auto & elem : cache) {
-    cout << i << ": " << elem.first << ":\n" << asctime(localtime(&elem.second.res_time)) << asctime(localtime(&elem.second.exp_time)) << elem.second.res_body << "\n";
+    cout << i << ": " << elem.first << ":\n"
+         << asctime(localtime(&elem.second.res_time))
+         << asctime(localtime(&elem.second.exp_time)) << elem.second.res_body << "\n";
     i++;
   }
   cout << "-------------------------------" << endl;
 }
 
-bool check_cache(int ID, string req, string host, int max_age, int max_stale, int min_fresh) {
-  const std::lock_guard<std::mutex> lock(cache_mtx); // might need to change this to not lock for entire scope
+bool check_cache(int ID,
+                 string req,
+                 string host,
+                 int max_age,
+                 int max_stale,
+                 int min_fresh) {
+  const std::lock_guard<std::mutex> lock(
+      cache_mtx);  // might need to change this to not lock for entire scope
   if (cache.find(req) != cache.end()) {
     cache_entry cache_hit = cache.find(req)->second;
     std::string const response_header =
@@ -111,12 +119,14 @@ bool check_cache(int ID, string req, string host, int max_age, int max_stale, in
         int entry_max_age = stoi(exp_match[2].str());
         if (entry_max_age == 0) {
           write_log(to_string(ID) + ": in cache, requires validation");
-        } else {
+        }
+        else {
           // add logic for client max-fresh
           time_t now = time(NULL);
-          int expire_time = cache_hit.exp_time; // server expire time
+          int expire_time = cache_hit.exp_time;  // server expire time
           if (max_age != -1) {
-            if (cache_hit.res_time + max_age < expire_time) { // override if the clients max age is less
+            if (cache_hit.res_time + max_age <
+                expire_time) {  // override if the clients max age is less
               expire_time = cache_hit.res_time + max_age;
               write_log(to_string(ID) + ": NOTE=using client max-age over cache max-age");
             }
@@ -128,16 +138,18 @@ bool check_cache(int ID, string req, string host, int max_age, int max_stale, in
           }
           else if (difftime(now + min_fresh, expire_time + max_stale) <= 0) {
             write_log(to_string(ID) + ": in cache, valid");
-            write_log(to_string(ID) + ": NOTE=expired but accepted due to max-stale value");
+            write_log(to_string(ID) +
+                      ": NOTE=expired but accepted due to max-stale value");
             return true;
           }
-          else if (difftime(now + min_fresh, expire_time + max_stale) > 0) { // can just be an else
+          else if (difftime(now + min_fresh, expire_time + max_stale) >
+                   0) {  // can just be an else
             // char date_time_string[100];
             string input = asctime(localtime(&cache_hit.exp_time));
             input.erase(std::remove(input.begin(), input.end(), '\n'), input.end());
             // strncpy(date_time_string, asctime(localtime(&cache_hit.exp_time)), strlen(asctime(localtime(&cache_hit.exp_time))) - 1);
             write_log(to_string(ID) + ": in cache, but expired at " + input);
-          } 
+          }
         }
       }
     }
@@ -194,17 +206,20 @@ pair<time_t, time_t> store_cache_information(int ID, string resp) {
       }
       times.second = request_time;
     }
-    else if (match[2].str().find("must-revalidate") != string::npos) { // should never need but is just an error catching case?
+    else if (match[2].str().find("must-revalidate") !=
+             string::npos) {  // should never need but is just an error catching case?
       write_log(to_string(ID) + ": cached, expires at " + "No Expire Time Given");
       times.second = request_time;
     }
     else {
-      write_log(to_string(ID) + ": not cacheable because " + "Cache-Control flag there, but had no cache information");
+      write_log(to_string(ID) + ": not cacheable because " +
+                "Cache-Control flag there, but had no cache information");
       times.second = zero_time;
     }
   }
   else {
-    write_log(to_string(ID) + ": not cacheable because " + "server gave no cache information");
+    write_log(to_string(ID) + ": not cacheable because " +
+              "server gave no cache information");
     times.second = zero_time;
   }
   return times;
@@ -238,7 +253,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
         string const age_str = match[2].str();
         if (!regex_search(age_str, age_match, age_rgx)) {
           write_log("ERROR malformatted max-age field in request");
-          http::response<http::string_body> response{http::status::bad_request, client_request.version()};
+          http::response<http::string_body> response{http::status::bad_request,
+                                                     client_request.version()};
           http::write(client_socket, response);
           return;
         }
@@ -248,7 +264,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
         string const stale_str = match[2].str();
         if (!regex_search(stale_str, stale_match, stale_rgx)) {
           write_log("ERROR malformatted max-stale field in request");
-          http::response<http::string_body> response{http::status::bad_request, client_request.version()};
+          http::response<http::string_body> response{http::status::bad_request,
+                                                     client_request.version()};
           http::write(client_socket, response);
           return;
         }
@@ -258,14 +275,16 @@ void forwardRequest(http::request<http::string_body> & client_request,
         string const fresh_str = match[2].str();
         if (!regex_search(fresh_str, fresh_match, fresh_rgx)) {
           write_log("ERROR malformatted max-stale field in request");
-          http::response<http::string_body> response{http::status::bad_request, client_request.version()};
+          http::response<http::string_body> response{http::status::bad_request,
+                                                     client_request.version()};
           http::write(client_socket, response);
           return;
         }
         min_fresh = stoi(fresh_match[2].str());
       }
     }
-    in_cache = check_cache(ID, string(client_request.target()), host, max_age_client, max_stale, min_fresh);
+    in_cache = check_cache(
+        ID, string(client_request.target()), host, max_age_client, max_stale, min_fresh);
   }
 
   if (in_cache) {
@@ -282,7 +301,8 @@ void forwardRequest(http::request<http::string_body> & client_request,
     return;
   }
 
-  write_log(to_string(ID) + ": Requesting \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + host);
+  write_log(to_string(ID) + ": Requesting \"" +
+            strHeaders.substr(0, strHeaders.find("\n") - 1) + "\" from " + host);
 
   ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
 
@@ -428,8 +448,7 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
   if (error == http::error::end_of_stream || error == http::error::partial_message) {
     write_log(to_string(ID) + ": WARNING " + error.message() + ", Sending Bad Request");
     //Send a Response 400 Bad Request back to client
-    http::response<http::string_body> response{http::status::bad_request,
-                                               request.version()};
+    http::response<http::string_body> response{http::status::bad_request, 11};
     http::write(socket, response);
     socket.shutdown(ip::tcp::socket::shutdown_both);
     return;
@@ -474,7 +493,7 @@ int main(int argc, char ** argv) {
   io_context ioc{1};
   //Listen to new connection
   ip::tcp::acceptor acceptor{ioc, {addr, port_num}};
-  int ID = 100; // care about starting at 1 or 100?
+  int ID = 100;  // care about starting at 1 or 100?
 
   while (true) {
     // make a new socket for the client

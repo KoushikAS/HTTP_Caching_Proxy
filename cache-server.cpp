@@ -132,9 +132,11 @@ bool check_cache(int ID, string req, string host, int max_age, int max_stale, in
             return true;
           }
           else if (difftime(now + min_fresh, expire_time + max_stale) > 0) { // can just be an else
-            char date_time_string[100];
-            strncpy(date_time_string, asctime(localtime(&cache_hit.exp_time)), strlen(asctime(localtime(&cache_hit.exp_time))) - 1);
-            write_log(to_string(ID) + ": in cache, but expired at " + date_time_string);
+            // char date_time_string[100];
+            string input = asctime(localtime(&cache_hit.exp_time));
+            input.erase(std::remove(input.begin(), input.end(), '\n'), input.end());
+            // strncpy(date_time_string, asctime(localtime(&cache_hit.exp_time)), strlen(asctime(localtime(&cache_hit.exp_time))) - 1);
+            write_log(to_string(ID) + ": in cache, but expired at " + input);
           } 
         }
       }
@@ -185,9 +187,10 @@ pair<time_t, time_t> store_cache_information(int ID, string resp) {
       }
       else {
         request_time += max_age;
-        char date_time_string[100];
-        strncpy(date_time_string, asctime(localtime(&request_time)), strlen(asctime(localtime(&request_time))) - 1);
-        write_log(to_string(ID) + ": cached, expires at " + date_time_string);
+        string input = asctime(localtime(&request_time));
+        input.erase(std::remove(input.begin(), input.end(), '\n'), input.end());
+        // strncpy(date_time_string, asctime(localtime(&request_time)), strlen(asctime(localtime(&request_time))) - 1);
+        write_log(to_string(ID) + ": cached, expires at " + input);
       }
       times.second = request_time;
     }

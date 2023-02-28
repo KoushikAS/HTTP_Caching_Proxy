@@ -286,8 +286,36 @@ if [ $comp_value -eq 1 ]
 then
     echo "Get cached request from the actual server after expiration time - FAILED"
 else
-    echo "Get cached request form the actual server after expiration time  - PASSED"
+    echo "Get cached request from the actual server after expiration time  - PASSED"
 fi
+
+cat resource/http-get-maxage-reval-2-req.txt | netcat 127.0.0.1 12345  > actual/http-get-maxage-reval-2-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-maxage-reval-2-res.txt) <(head -n 1 actual/http-get-maxage-reval-2-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Get from server with max-age 10 - FAILED"
+else
+    echo "Get from server with max-age 10 - PASSED"
+fi
+
+cat resource/http-get-maxage-reval-2-req.txt | netcat 127.0.0.1 12345  > actual/http-get-maxage-reval-2-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-maxage-reval-2-res.txt) <(head -n 1 actual/http-get-maxage-reval-2-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Get from server with max-age 10 - FAILED"
+else
+    echo "Get from server with max-age 10 - PASSED"
+fi
+
+
 
 
 

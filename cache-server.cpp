@@ -29,7 +29,6 @@ https://www.rfc-editor.org/rfc/rfc7234#section-5.2.1.5
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <ctime>
 #include <regex>
 #include <unordered_map>
 
@@ -84,17 +83,20 @@ void print_cache() {
   cout << "Printing the cache!" << endl;
   int i = 1;
   for (const auto & elem : cache) {
-    cout << i << ": " << elem.first << ":\n" << asctime(&elem.second.exp_time) << elem.second.res_body << "\n";
+    cout << i << ": " << elem.first << ":\n"
+         << asctime(&elem.second.exp_time) << elem.second.res_body << "\n";
     i++;
   }
   cout << "-------------------------------" << endl;
 }
 
 bool check_cache(int ID, string req, string host) {
-  const std::lock_guard<std::mutex> lock(cache_mtx); // might need to change this to not lock for entire scope
+  const std::lock_guard<std::mutex> lock(
+      cache_mtx);  // might need to change this to not lock for entire scope
   if (cache.find(req) != cache.end()) {
     cache_entry cache_hit = cache.find(req)->second;
-    std::string const response_header = boost::lexical_cast<std::string>(cache_hit.res_body.base());
+    std::string const response_header =
+        boost::lexical_cast<std::string>(cache_hit.res_body.base());
     regex rg_cache("(Cache\\-Control\\: (.*))");
     smatch match;
     if (regex_search(response_header, match, rg_cache)) {
@@ -109,19 +111,22 @@ bool check_cache(int ID, string req, string host) {
         int max_age = stoi(exp_match[2].str());
         if (max_age == 0) {
           write_log(to_string(ID) + ": in cache, requires validation");
-        } else {
+        }
+        else {
           time_t now = time(NULL);
           time_t t2 = mktime(&cache_hit.exp_time);
           if (difftime(now, t2) > 0) {
-            write_log(to_string(ID) + ": in cache, but expired at " + asctime(&cache_hit.exp_time));
-          } else {
+            write_log(to_string(ID) + ": in cache, but expired at " +
+                      asctime(&cache_hit.exp_time));
+          }
+          else {
             write_log(to_string(ID) + ": in cache, valid");
             return true;
           }
         }
       }
     }
-    else { // should never trigger, error checking
+    else {  // should never trigger, error checking
       write_log(to_string(ID) + ": not in cache");
     }
   }
@@ -141,7 +146,8 @@ struct tm store_cache_information(int ID, string resp) {
 
   if (regex_search(resp, match, rg_cache)) {
     // contains a Cache-Control tag
-    if (match[2].str().find("no-store") != string::npos || match[2].str().find("private") != string::npos) {
+    if (match[2].str().find("no-store") != string::npos ||
+        match[2].str().find("private") != string::npos) {
       write_log(to_string(ID) + ": not cacheable because " + "no-store/private flag");
       return zero_time;
     }
@@ -165,17 +171,20 @@ struct tm store_cache_information(int ID, string resp) {
       }
       return now_time;
     }
-    else if (match[2].str().find("must-revalidate") != string::npos) { // should never need but is just an error catching case?
+    else if (match[2].str().find("must-revalidate") !=
+             string::npos) {  // should never need but is just an error catching case?
       write_log(to_string(ID) + ": cached, but expires at " + "No Expire Time Given");
       return now_time;
     }
     else {
-      write_log(to_string(ID) + ": not cacheable because " + "Cache-Control flag there, but had no cache information");
+      write_log(to_string(ID) + ": not cacheable because " +
+                "Cache-Control flag there, but had no cache information");
       return zero_time;
     }
   }
   else {
-    write_log(to_string(ID) + ": not cacheable because " + "server gave no cache information");
+    write_log(to_string(ID) + ": not cacheable because " +
+              "server gave no cache information");
     return zero_time;
   }
 }
@@ -199,18 +208,21 @@ void forwardRequest(http::request<http::string_body> & client_request,
 
   if (in_cache) {
     cache_entry cache_hit = cache.find(string(client_request.target()))->second;
-    std::string const cached_response_headers = boost::lexical_cast<std::string>(cache_hit.res_body.base());
+    std::string const cached_response_headers =
+        boost::lexical_cast<std::string>(cache_hit.res_body.base());
     http::write(client_socket, cache_hit.res_body);
     write_log(to_string(ID) + ": Responding \"" +
-              cached_response_headers.substr(0, cached_response_headers.find("\n") - 1) + "\"");
+              cached_response_headers.substr(0, cached_response_headers.find("\n") - 1) +
+              "\"");
     if (cached_response_headers.find("200 OK") != std::string::npos) {
-      write_log(to_string(ID) + ": Tunnel closed"); 
+      write_log(to_string(ID) + ": Tunnel closed");
     }
     return;
   }
 
   string const strHeaders = boost::lexical_cast<string>(forward_request.base());
-  write_log(to_string(ID) + ": Requesting \"" + strHeaders.substr(0, strHeaders.find("\n")-1) + "\" from " + host);
+  write_log(to_string(ID) + ": Requesting \"" +
+            strHeaders.substr(0, strHeaders.find("\n") - 1) + "\" from " + host);
 
   ip::tcp::socket server_socket = setUpSocketToConnect(host, port, ioc);
 
@@ -237,7 +249,7 @@ void forwardRequest(http::request<http::string_body> & client_request,
     if (client_request.method_string() == "GET") {
       exp_time = store_cache_information(ID, response_headers);
     }
-    write_log(to_string(ID) + ": Tunnel closed"); 
+    write_log(to_string(ID) + ": Tunnel closed");
   }
   time_t t1 = mktime(&exp_time);
   time_t t2 = mktime(&zero_time);
@@ -344,7 +356,11 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
 
   //Error check
   if (error == http::error::end_of_stream || error == http::error::partial_message) {
-    write_log(to_string(ID) + ": WARNING " + error.message());
+    write_log(to_string(ID) + ": WARNING " + error.message() + "Sending Bad Request");
+    //Send a Response 400 Bad Request back to client
+    http::response<http::string_body> response{http::status::bad_request,
+                                               request.version()};
+    http::write(socket, response);
     socket.shutdown(ip::tcp::socket::shutdown_both);
     return;
   }
@@ -368,7 +384,12 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
     forwardRequest(request, ioc, socket, ID);
   }
   else {
-    write_log(to_string(ID) + ": WARNING Unknown HTTP request made");
+    write_log(to_string(ID) +
+              ": WARNING Unknown HTTP request made Responding 400 Bad request");
+    //Send a Response 400 Bad Request back to client
+    http::response<http::string_body> response{http::status::bad_request,
+                                               request.version()};
+    http::write(socket, response);
   }
 
   socket.shutdown(ip::tcp::socket::shutdown_both);

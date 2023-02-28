@@ -422,6 +422,8 @@ void do_session(ip::tcp::socket & socket, io_context & ioc, int ID) {
   boost::system::error_code error;
   http::read(socket, buff, request, error);
 
+  cout << request.base() << endl;
+
   //Error check
   if (error == http::error::end_of_stream || error == http::error::partial_message) {
     write_log(to_string(ID) + ": WARNING " + error.message() + ", Sending Bad Request");

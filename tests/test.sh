@@ -15,6 +15,45 @@ else
     echo "Handle malformed response gracefully - PASSED"
 fi
 
+cat resource/http-get-req-maxage-bad-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-maxage-bad-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-maxage-bad-res.txt) <(head -n 1 actual/http-get-req-maxage-bad-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Handle malformed 'maxage' tag request gracefully - FAILED"
+else
+    echo "Handle malformed 'maxage' tage response gracefully - PASSED"
+fi
+
+cat resource/http-get-req-maxstale-bad-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-maxstale-bad-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-maxstale-bad-res.txt) <(head -n 1 actual/http-get-req-maxstale-bad-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Handle malformed 'maxstale' tag request gracefully - FAILED"
+else
+    echo "Handle malformed 'maxstale' tage response gracefully - PASSED"
+fi
+
+cat resource/http-get-req-minfresh-bad-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-minfresh-bad-res.txt
+
+#testing the header code
+diff --brief <(head -n 1 resource/http-get-req-minfresh-bad-res.txt) <(head -n 1 actual/http-get-req-minfresh-bad-res.txt) >/dev/null
+comp_value=$?
+
+if [ $comp_value -eq 1 ]
+then
+    echo "Handle malformed 'minfresh' tag request gracefully - FAILED"
+else
+    echo "Handle malformed 'minfresh' tage response gracefully - PASSED"
+fi
+
 
 cat resource/http-connect-req.txt | netcat 127.0.0.1 12345  > actual/http-connect-res.txt
 

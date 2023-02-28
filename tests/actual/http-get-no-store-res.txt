@@ -1,0 +1,8 @@
+HTTP/1.1 200 OK
+Cache-Control: no-store
+Content-Type: text/plain; charset=UTF-8
+Date: Tue, 28 Feb 2023 13:08:01 GMT
+Content-Length: 28
+Sozu-Id: 01GTC264YD11T7A4Q82X410MJ8
+
+"Cache-Control" : "no-store"

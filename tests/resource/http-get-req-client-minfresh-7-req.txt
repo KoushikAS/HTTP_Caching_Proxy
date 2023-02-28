@@ -2,7 +2,7 @@ GET https://run.mocky.io/v3/d93a9e42-9aa2-4a92-9720-0e1924388158 HTTP/1.1
 Cache-Control: min-fresh=7
 User-Agent: PostmanRuntime/7.31.1
 Accept: */*
-Postman-Token: e671e67b-5cfe-4b1b-b8e1-90a5a179f2fe
+Postman-Token: 951f710c-f11e-485f-82b7-74b8a8d7e39c
 Host: run.mocky.io
 Accept-Encoding: gzip, deflate, br
 Connection: keep-alive

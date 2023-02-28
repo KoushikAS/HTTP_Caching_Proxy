@@ -345,7 +345,7 @@ else
     echo "23) Get from cache with min-fresh not valid - PASSED"
 fi
 
-sleep 5
+sleep 15
 
 cat resource/http-get-req-client-maxstale-5-req.txt | netcat 127.0.0.1 12345  > actual/http-get-req-client-maxstale-5-res.txt
 

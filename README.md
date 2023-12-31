@@ -26,7 +26,7 @@ cd HTTP_Caching_Proxy
 ```
 
 ### Running with Docker
-1. Use Docker to build and run the containers for both the backend and frontend services.
+1. Use Docker to build and run the containers.
 
 ```
 docker-compose up -d

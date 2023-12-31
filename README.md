@@ -1,13 +1,31 @@
-# erss-hwk2-ka266-rm358
+# HTTP Caching Proxy
 
-# Proxy Server for ECE 568 project 2 
+## Overview
 
-#Authors 
-Koushik Annareddy Sreenath (ka266)
-Ryan Mecca (rm358)
+This project involves developing an HTTP caching proxy in C++. The proxy forwards requests to the origin server on behalf of the client, caches responses, and serves cached copies of resources when appropriate. The proxy supports GET, POST, and CONNECT requests and is designed to handle HTTPS communications via the CONNECT method.
 
-## Getting started
-To run the application 
+## Key Features
+
+- **Caching Mechanism:** Caches 200-OK responses to GET requests and follows expiration/re-validation rules for serving requests from the cache.
+- **Concurrency Handling:** Manages multiple concurrent requests effectively using multiple threads, with a shared and synchronized cache.
+- **Logging:** Generates logs for each request in `/var/log/erss/proxy.log` with detailed information including request ID, time, IP address, and HTTP request/response lines.
+- **Error Handling:** Robustly handles external failures, malformed requests, and corrupted responses, responding with appropriate HTTP error codes.
+
+## Installation and Running
+
+### Prerequisites
+- Docker
+  
+### Installation
+1. Clone the repository to your local machine:
+
+```sh
+git clone https://github.com/KoushikAS/Ride_Sharing_App.git
+cd Ride_Sharing_App/docker-deploy
+```
+
+### Running with Docker
+1. Use Docker to build and run the containers for both the backend and frontend services.
 
 ```
 docker-compose up -d
@@ -20,20 +38,14 @@ cd tests/
 bash test.sh
 ```
 
-Check the logs to see if the request is handled correctly.
+## Contributions
 
-Note: We have found that POST http://httpbin.org/post sometimes is down. If you see post request did not match please ensure that this server is up and try again.
+This project was completed as part of an academic assignment with requirments provided requirments.pdf. Contributions were made solely by Koushik Annareddy Sreenath, Ryan Mecca, adhering to the project guidelines and requirements set by the course ECE-568 Engineering Robust Server Software 
 
+## License
 
-## Logging
-To check the logs
+This project is an academic assignment and is subject to university guidelines on academic integrity and software use.
 
-```
-cat logs/proxy.log
-```
+## Acknowledgments
 
-## Citations
-1) https://www.boost.org/doc/libs/1_80_0/libs/beast/example/http/server/sync/http_server_sync.cpp
-2) https://man7.org/linux/man-pages/man2/select.2.html                  
-3) https://www.geeksforgeeks.org/tcp-and-udp-server-using-select/    
-  
+Thanks to Brian Rogers and the course staff for providing guidance and support throughout the project.

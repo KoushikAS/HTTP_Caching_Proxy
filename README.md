@@ -11,6 +11,7 @@ This project involves developing an HTTP caching proxy in C++. The proxy forward
 - **Logging:** Generates logs for each request in `/var/log/erss/proxy.log` with detailed information including request ID, time, IP address, and HTTP request/response lines.
 - **Error Handling:** Robustly handles external failures, malformed requests, and corrupted responses, responding with appropriate HTTP error codes.
 
+
 ## Installation and Running
 
 ### Prerequisites
@@ -20,8 +21,8 @@ This project involves developing an HTTP caching proxy in C++. The proxy forward
 1. Clone the repository to your local machine:
 
 ```sh
-git clone https://github.com/KoushikAS/Ride_Sharing_App.git
-cd Ride_Sharing_App/docker-deploy
+git clone https://github.com/KoushikAS/HTTP_Caching_Proxy.git
+cd HTTP_Caching_Proxy
 ```
 
 ### Running with Docker
